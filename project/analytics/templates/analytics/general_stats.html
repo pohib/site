@@ -55,7 +55,6 @@
         </div>
     </div>
 
-    <!-- 2. Динамика количества вакансий -->
     <div class="card chart-card mb-5">
         <div class="card-header bg-primary text-white">
             <h3 class="mb-0">Динамика количества вакансий по годам</h3>
@@ -91,7 +90,6 @@
         </div>
     </div>
 
-    <!-- 3. Уровень зарплат по городам -->
     <div class="card chart-card mb-5">
         <div class="card-header bg-primary text-white">
             <h3 class="mb-0">Уровень зарплат по городам (ТОП-10)</h3>
@@ -127,7 +125,6 @@
         </div>
     </div>
 
-    <!-- 4. Доля вакансий по городам -->
     <div class="card chart-card mb-5">
         <div class="card-header bg-primary text-white">
             <h3 class="mb-0">Доля вакансий по городам (ТОП-10)</h3>
@@ -161,7 +158,6 @@
         </div>
     </div>
 
-    <!-- 5. ТОП-20 навыков -->
     <div class="card chart-card">
         <div class="card-header bg-primary text-white">
             <h3 class="mb-0">ТОП-20 навыков по годам</h3>
@@ -200,7 +196,6 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация сортировки таблиц
     $('table').each(function() {
         $(this).DataTable({
             responsive: true,
@@ -212,7 +207,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Плавная прокрутка к секциям
     $('.nav-link').on('click', function(e) {
         if (this.hash !== '') {
             e.preventDefault();
