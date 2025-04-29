@@ -7,7 +7,7 @@ from datetime import datetime
 from django.conf import settings
 from matplotlib.ticker import FuncFormatter
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'csharp_dev.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
 django.setup()
 
 from analytics.models import SalaryByYear, SalaryByCity, Skill
@@ -42,15 +42,15 @@ def generate_salary_by_year_chart():
     for bar in bars1:
         height = bar.get_height()
         plt.text(bar.get_x() + bar.get_width()/2., height,
-                 f'{height:,.0f}'.replace(',', ' '),
-                 ha='center', va='bottom', fontsize=9)
+                f'{height:,.0f}'.replace(',', ' '),
+                ha='center', va='bottom', fontsize=9)
     
     if prof_salaries:
         for bar in bars2:
             height = bar.get_height()
             plt.text(bar.get_x() + bar.get_width()/2., height,
-                     f'{height:,.0f}'.replace(',', ' '),
-                     ha='center', va='bottom', fontsize=9)
+                    f'{height:,.0f}'.replace(',', ' '),
+                    ha='center', va='bottom', fontsize=9)
     
     plt.tight_layout()
     plt.savefig(os.path.join(settings.MEDIA_ROOT, 'charts', 'salary_by_year.png'), dpi=150, bbox_inches='tight')
@@ -67,7 +67,7 @@ def generate_vacancies_by_year_chart():
     line1, = plt.plot(years, total_vacancies, 'o-', label='Все вакансии', color='#2394d2', linewidth=2, markersize=8)
     if prof_vacancies:
         line2, = plt.plot(years[:len(prof_vacancies)], prof_vacancies, 's-', label='C# разработчик', 
-                         color='#28a745', linewidth=2, markersize=8)
+                        color='#28a745', linewidth=2, markersize=8)
     
     plt.title('Динамика количества вакансий по годам', pad=20, fontsize=14, fontweight='bold')
     plt.xlabel('Год', labelpad=10)
@@ -78,12 +78,12 @@ def generate_vacancies_by_year_chart():
 
     for x, y in zip(years, total_vacancies):
         plt.text(x, y, f'{y:,}'.replace(',', ' '), 
-                 ha='center', va='bottom', fontsize=9)
+                ha='center', va='bottom', fontsize=9)
     
     if prof_vacancies:
         for x, y in zip(years[:len(prof_vacancies)], prof_vacancies):
             plt.text(x, y, f'{y:,}'.replace(',', ' '), 
-                     ha='center', va='bottom', fontsize=9)
+                    ha='center', va='bottom', fontsize=9)
     
     plt.tight_layout()
     plt.savefig(os.path.join(settings.MEDIA_ROOT, 'charts', 'vacancies_by_year.png'), dpi=150, bbox_inches='tight')
@@ -105,8 +105,8 @@ def generate_salary_by_city_chart():
     for bar in bars:
         width = bar.get_width()
         plt.text(width, bar.get_y() + bar.get_height()/2., 
-                 f'{width:,.0f}'.replace(',', ' '),
-                 ha='left', va='center', fontsize=9, pad=5)
+                f'{width:,.0f}'.replace(',', ' '),
+                ha='left', va='center', fontsize=9, pad=5)
     
     plt.tight_layout()
     plt.savefig(os.path.join(settings.MEDIA_ROOT, 'charts', 'salary_by_city.png'), dpi=150, bbox_inches='tight')
@@ -131,7 +131,6 @@ def generate_vacancy_share_by_city_chart():
         autotext.set_fontsize(10)
         autotext.set_fontweight('bold')
     
-    # Добавляем белую обводку
     for patch in patches:
         patch.set_edgecolor('white')
         patch.set_linewidth(0.5)
@@ -153,12 +152,11 @@ def generate_top_skills_chart():
     plt.xlabel('Количество упоминаний', labelpad=10)
     plt.grid(axis='x', linestyle='--', alpha=0.7)
     
-    # Добавление значений на столбцы
     for bar in bars:
         width = bar.get_width()
         plt.text(width, bar.get_y() + bar.get_height()/2., 
-                 f'{width:,}'.replace(',', ' '),
-                 ha='left', va='center', fontsize=9, pad=5)
+                f'{width:,}'.replace(',', ' '),
+                ha='left', va='center', fontsize=9, pad=5)
     
     plt.tight_layout()
     plt.savefig(os.path.join(settings.MEDIA_ROOT, 'charts', 'top_skills.png'), dpi=150, bbox_inches='tight')

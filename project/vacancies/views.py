@@ -6,6 +6,7 @@ from .models import Vacancy
 
 def latest_vacancies(request):
     Vacancy.objects.all().delete()
+    
     url = "https://api.hh.ru/vacancies"
     params = {
         "text": "C# developer OR C# программист",
