@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}География зарплат C# разработчиков{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+        <li class="breadcrumb-item active" aria-current="page">География</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<style>
+    .geo-card {
+        transition: all 0.3s ease;
+    }
+    
+    .geo-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .map-container {
+        height: 500px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .city-badge {
+        font-size: 0.8rem;
+        margin-right: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="geography-section">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="mb-4"><i class="bi bi-globe"></i> География зарплат</h2>
+            <p class="lead">Распределение зарплат и вакансий для C# разработчиков по городам России</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card geo-card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="bi bi-cash-stack"></i> ТОП-10 городов по зарплатам</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="salaryGeoChart"></canvas>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="table data-table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Город</th>
+                                    <th>Зарплата (₽)</th>
+                                    <th>Изменение</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for city in salary_by_city %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary city-badge">{{ forloop.counter }}</span>
+                                        {{ city.name }}
+                                    </td>
+                                    <td>{{ city.salary|floatformat:"0" }}</td>
+                                    <td class="{% if city.change > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ city.change|floatformat:"1" }}%
+                                        {% if city.change > 0 %}<i class="bi bi-arrow-up"></i>{% else %}<i class="bi bi-arrow-down"></i>{% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card geo-card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="bi bi-building"></i> ТОП-10 городов по вакансиям</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="vacancyGeoChart"></canvas>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="table data-table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Город</th>
+                                    <th>Вакансии</th>
+                                    <th>Доля рынка</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for city in vacancy_by_city %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary city-badge">{{ forloop.counter }}</span>
+                                        {{ city.name }}
+                                    </td>
+                                    <td>{{ city.count }}</td>
+                                    <td>{{ city.share|floatformat:"2" }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="bi bi-map"></i> Карта распределения вакансий</h3>
+        </div>
+        <div class="card-body">
+            <div class="map-container" id="map"></div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    new Chart(document.getElementById('salaryGeoChart'), {
+        type: 'bar',
+        data: {
+            labels: [{% for city in salary_by_city %}"{{ city.name }}",{% endfor %}],
+            datasets: [{
+                label: 'Средняя зарплата (₽)',
+                data: [{% for city in salary_by_city %}{{ city.salary }},{% endfor %}],
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString('ru-RU') + ' ₽';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('vacancyGeoChart'), {
+        type: 'doughnut',
+        data: {
+            labels: [{% for city in vacancy_by_city %}"{{ city.name }}",{% endfor %}],
+            datasets: [{
+                data: [{% for city in vacancy_by_city %}{{ city.share }},{% endfor %}],
+                backgroundColor: [
+                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', 
+                    '#e74a3b', '#858796', '#5a5c69', '#3a3b45',
+                    '#2e59d9', '#17a673'
+                ],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ": " + context.raw + "%";
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const map = L.map('map').setView([55.76, 37.64], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    {% for city in map_data %}
+    L.marker([{{ city.lat }}, {{ city.lon }}]).addTo(map)
+        .bindPopup(`
+            <b>${city.name}</b><br>
+            Зарплата: ${city.salary.toLocaleString('ru-RU')} ₽<br>
+            Вакансий: ${city.count}
+        `);
+    {% endfor %}
+});
+</script>
+{% endblock %}

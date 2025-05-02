@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Навыки C# разработчиков{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Навыки</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<style>
+    .skill-card {
+        border-left: 4px solid #4e73df;
+        transition: all 0.3s ease;
+    }
+    
+    .skill-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .skill-badge {
+        font-size: 0.8rem;
+        margin-right: 5px;
+    }
+    
+    .skill-progress {
+        height: 10px;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="skills-section">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="mb-4"><i class="bi bi-lightbulb"></i> Требуемые навыки</h2>
+            <p class="lead">Анализ наиболее востребованных навыков для C# разработчиков</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card skill-card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="bi bi-star"></i> ТОП-20 навыков</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="topSkillsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card skill-card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="bi bi-graph-up"></i> Динамика навыков</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="skillsTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="bi bi-list-check"></i> Полный список навыков</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table data-table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Навык</th>
+                            <th>Частота</th>
+                            <th>Изменение</th>
+                            <th>Популярность</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for skill in skills %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-primary skill-badge">{{ forloop.counter }}</span>
+                                {{ skill.name }}
+                            </td>
+                            <td>{{ skill.count }}</td>
+                            <td class="{% if skill.change > 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ skill.change|floatformat:"1" }}%
+                                {% if skill.change > 0 %}<i class="bi bi-arrow-up"></i>{% else %}<i class="bi bi-arrow-down"></i>{% endif %}
+                            </td>
+                            <td>
+                                <div class="progress skill-progress">
+                                    <div class="progress-bar bg-success" 
+                                        role="progressbar" 
+                                        style="width: {{ skill.percentage }}%" 
+                                        aria-valuenow="{{ skill.percentage }}" 
+                                        aria-valuemin="0" 
+                                        aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    new Chart(document.getElementById('topSkillsChart'), {
+        type: 'horizontalBar',
+        data: {
+            labels: [{% for skill in skills|slice:":20" %}"{{ skill.name }}",{% endfor %}],
+            datasets: [{
+                label: 'Количество упоминаний',
+                data: [{% for skill in skills|slice:":20" %}{{ skill.count }},{% endfor %}],
+                backgroundColor: 'rgba(78, 115, 223, 0.7)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('skillsTrendChart'), {
+        type: 'line',
+        data: {
+            labels: [{% for year in years %}"{{ year }}",{% endfor %}],
+            datasets: [
+                {% for skill in top_5_skills %}
+                {
+                    label: '{{ skill.name }}',
+                    data: [{% for count in skill.years %}{{ count }},{% endfor %}],
+                    borderColor: getRandomColor(),
+                    backgroundColor: 'rgba(0, 0, 0, 0)',
+                    tension: 0.1
+                },
+                {% endfor %}
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+
+    function getRandomColor() {
+        const colors = [
+            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+            '#5a5c69', '#3a3b45', '#2e59d9', '#17a673', '#2c9faf'
+        ];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+});
+</script>
+{% endblock %}

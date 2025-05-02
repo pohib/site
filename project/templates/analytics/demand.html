@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Востребованность C# разработчиков{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Востребованность</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<style>
+    .stat-card {
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .salary-change {
+        font-weight: bold;
+    }
+    
+    .increase {
+        color: var(--success-color);
+    }
+    
+    .decrease {
+        color: var(--danger-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="demand-section">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="mb-4"><i class="bi bi-graph-up"></i> Востребованность C# разработчиков</h2>
+            <p class="lead">Анализ динамики зарплат и количества вакансий для C# разработчиков в последние годы.</p>
+        </div>
+    </div>
+
+    <!-- Карточки с общей статистикой -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Средняя зарплата</h5>
+                    <p class="card-text display-6">{{ avg_salary|floatformat:"0" }} ₽</p>
+                    <p class="text-muted">по данным за {{ current_year }} год</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Количество вакансий</h5>
+                    <p class="card-text display-6">{{ vacancy_count }}</p>
+                    <p class="text-muted">за последние 12 месяцев</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Рост зарплат</h5>
+                    <p class="card-text display-6 {% if salary_growth > 0 %}increase{% else %}decrease{% endif %}">
+                        {{ salary_growth|floatformat:"1" }}%
+                        {% if salary_growth > 0 %}<i class="bi bi-arrow-up"></i>{% else %}<i class="bi bi-arrow-down"></i>{% endif %}
+                    </p>
+                    <p class="text-muted">за последние 3 года</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Динамика зарплат -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="bi bi-currency-exchange"></i> Динамика зарплат</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <canvas id="salaryChart" data-chart-type="line" data-chart-data="{% static 'data/salary_data.json' %}"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="table-responsive">
+                        <table class="table data-table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Год</th>
+                                    <th>Зарплата (₽)</th>
+                                    <th>Изменение</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in salary_data %}
+                                <tr>
+                                    <td>{{ item.year }}</td>
+                                    <td>{{ item.salary|floatformat:"0" }}</td>
+                                    <td class="salary-change {% if item.change > 0 %}increase{% else %}decrease{% endif %}">
+                                        {{ item.change|floatformat:"1" }}%
+                                        {% if item.change > 0 %}<i class="bi bi-arrow-up"></i>{% else %}<i class="bi bi-arrow-down"></i>{% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Динамика вакансий -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="bi bi-bar-chart-line"></i> Динамика вакансий</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <canvas id="vacancyChart" data-chart-type="bar" data-chart-data="{% static 'data/vacancy_data.json' %}"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="table-responsive">
+                        <table class="table data-table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Год</th>
+                                    <th>Вакансии</th>
+                                    <th>Доля рынка</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in vacancy_data %}
+                                <tr>
+                                    <td>{{ item.year }}</td>
+                                    <td>{{ item.count }}</td>
+                                    <td>{{ item.share|floatformat:"2" }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    async function loadChartData(url) {
+        const response = await fetch(url);
+        return await response.json();
+    }
+
+    async function initCharts() {
+        const salaryCtx = document.getElementById('salaryChart').getContext('2d');
+        const vacancyCtx = document.getElementById('vacancyChart').getContext('2d');
+        
+        const salaryData = await loadChartData(document.getElementById('salaryChart').dataset.chartData);
+        const vacancyData = await loadChartData(document.getElementById('vacancyChart').dataset.chartData);
+
+        new Chart(salaryCtx, {
+            type: 'line',
+            data: salaryData,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Динамика средних зарплат (₽)'
+                    },
+                },
+                interaction: {
+                    intersect: false,
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('ru-RU') + ' ₽';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        new Chart(vacancyCtx, {
+            type: 'bar',
+            data: vacancyData,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Динамика количества вакансий'
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    if (typeof Chart !== 'undefined') {
+        initCharts();
+    }
+});
+</script>
+{% endblock %}
