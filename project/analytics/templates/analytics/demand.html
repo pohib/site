@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'demand' %}">Востребованность</a></li>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/charts.css' %}">
+<style>
+    .salary-difference {
+        font-weight: bold;
+    }
+    .salary-increase {
+        color: #28a745;
+    }
+    .salary-decrease {
+        color: #dc3545;
+    }
+    .chart-container {
+        position: relative;
+        height: 400px;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Востребованность C# разработчиков</h2>
+    
+    <div class="card chart-card mb-5">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Динамика уровня зарплат по годам для C# разработчиков</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-chart-combo">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Год</th>
+                                <th>Средняя зарплата (руб)</th>
+                                <th>Изменение к предыдущему году</th>
+                                <th>Количество вакансий</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in salary_by_year %}
+                            <tr>
+                                <td>{{ item.year }}</td>
+                                <td>{{ item.profession_average_salary|floatformat:"0"|default:"-" }}</td>
+                                <td>
+                                    {% if item.salary_change %}
+                                        <span class="salary-difference {% if item.salary_change > 0 %}salary-increase{% else %}salary-decrease{% endif %}">
+                                            {{ item.salary_change|floatformat:"1" }}%
+                                            {% if item.salary_change > 0 %}&uarr;{% else %}&darr;{% endif %}
+                                        </span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.profession_vacancy_count|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div>
+                    <img src="{{ MEDIA_URL }}charts/salary_demand.png" alt="Динамика зарплат C# разработчиков по годам" class="chart-img">
+                    <div class="chart-legend mt-3">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #28a745;"></span> 
+                            C# разработчик
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card chart-card">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Динамика количества вакансий по годам для C# разработчиков</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-chart-combo">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Год</th>
+                                <th>Количество вакансий</th>
+                                <th>Изменение к предыдущему году</th>
+                                <th>Доля от всех вакансий (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in salary_by_year %}
+                            <tr>
+                                <td>{{ item.year }}</td>
+                                <td>{{ item.profession_vacancy_count|default:"-" }}</td>
+                                <td>
+                                    {% if item.vacancy_change %}
+                                        <span class="salary-difference {% if item.vacancy_change > 0 %}salary-increase{% else %}salary-decrease{% endif %}">
+                                            {{ item.vacancy_change|floatformat:"1" }}%
+                                            {% if item.vacancy_change > 0 %}&uarr;{% else %}&darr;{% endif %}
+                                        </span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.profession_share|floatformat:"2"|default:"-" }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div>
+                    <img src="{{ MEDIA_URL }}charts/vacancies_demand.png" alt="Динамика вакансий C# разработчиков по годам" class="chart-img">
+                    <div class="chart-legend mt-3">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #17a2b8;"></span> 
+                            Вакансии C#
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    $('.table').DataTable({
+        responsive: true,
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
+        },
+        dom: '<"top"f>rt<"bottom"lip><"clear">',
+        pageLength: 5,
+        order: [[0, 'desc']]
+    });
+
+    $('a[href^="#"]').on('click', function(e) {
+        e.preventDefault();
+        $('html, body').animate({
+            scrollTop: $($(this).attr('href')).offset().top - 20
+        }, 800);
+    });
+});
+</script>
+{% endblock %}
