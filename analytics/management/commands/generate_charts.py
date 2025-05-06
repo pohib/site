@@ -6,4 +6,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         generate_all_charts()
-        self.stdout.write(self.style.SUCCESS('Charts generated successfully'))
+        self.stdout.write(self.style.SUCCESS('Графики успешно сгенерированы'))
