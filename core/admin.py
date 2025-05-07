@@ -8,7 +8,7 @@ class PageAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title',)}
     
     class Meta:
-        verbose_name = _('Страница')
+        verbose_name = _('страницу')
         verbose_name_plural = _('Страницы')
 
 @admin.register(Statistic)
@@ -18,5 +18,5 @@ class StatisticAdmin(admin.ModelAdmin):
     list_filter = ('page',)
     
     class Meta:
-        verbose_name = _('Статистика')
+        verbose_name = _('статистику')
         verbose_name_plural = _('Статистика')

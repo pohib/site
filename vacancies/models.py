@@ -13,7 +13,7 @@ class Vacancy(models.Model):
     company_logo = models.URLField(_('Лого компании'), null=True, blank=True)
 
     class Meta:
-        verbose_name = _('Вакансия')
+        verbose_name = _('вакансию')
         verbose_name_plural = _('Вакансии')
         ordering = ['-published_at']
         indexes = [

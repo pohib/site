@@ -19,7 +19,7 @@ class SalaryByYear(models.Model):
     )
 
     class Meta:
-        verbose_name = _('Статистика по годам')
+        verbose_name = _('статистику по годам')
         verbose_name_plural = _('Статистика по годам')
         ordering = ['year']
 
@@ -37,7 +37,7 @@ class SalaryByCity(models.Model):
     )
 
     class Meta:
-        verbose_name = _('Статистика по городам')
+        verbose_name = _('статистику по городам')
         verbose_name_plural = _('Статистика по городам')
         ordering = ['-average_salary']
 

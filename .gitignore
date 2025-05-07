@@ -61,5 +61,6 @@ dist/
 .pytest_cache/
 
 # Media and static
-/media/
-/staticfiles/
+media/
+static/
+staticfiles/

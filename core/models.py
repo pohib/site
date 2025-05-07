@@ -1,19 +1,21 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
+from django_ckeditor_5.fields import CKEditor5Field
 
 class Page(models.Model):
     title = models.CharField(_('Заголовок'), max_length=200)
     slug = models.SlugField(_('URL-адрес'), unique=True, blank=True, help_text=_('Уникальный идентификатор страницы для URL'))
-    content = models.TextField(_('Содержание страницы'), help_text=_('Основной текст страницы'))
+    content = CKEditor5Field(_('Содержание страницы'), help_text=_('Основной текст страницы'))
     image = models.ImageField(_('Изображение'), upload_to='pages/', 
                             null=True, blank=True,
                             help_text=_('Изображение для страницы'))
     created_at = models.DateTimeField(_('Дата создания'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Дата обновления'), auto_now=True)
+    is_html = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = _('Страница')
+        verbose_name = _('страницу')
         verbose_name_plural = _('Страницы')
         ordering = ['title']
 
@@ -33,7 +35,7 @@ class Statistic(models.Model):
     order = models.PositiveIntegerField(_('Порядок отображения'), default=0, help_text=_('Число для сортировки (меньше - выше)'))
 
     class Meta:
-        verbose_name = _('Статистика')
+        verbose_name = _('статистику')
         verbose_name_plural = _('Данные статистики')
         ordering = ['order']
 

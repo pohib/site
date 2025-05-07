@@ -30,7 +30,7 @@ def latest_vacancies(request):
         for vacancy_data in vacancies_data[:10]:
             try:
                 detail_response = requests.get(
-                    f"https://api.hh.ru/vacancies/{vacancy_data['id']}",
+                    f"https://api./vacancies/{vacancy_data['id']}",
                     timeout=10
                 )
                 detail_response.raise_for_status()
@@ -79,6 +79,7 @@ def latest_vacancies(request):
             'vacancies': [],
             'error': "Не удалось загрузить вакансии. Попробуйте позже."
         })
+        
 def get_cbr_currency_rate(currency_code, date):
     if settings.DEBUG:
         MOCK_RATES = {

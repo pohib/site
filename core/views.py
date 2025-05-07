@@ -13,4 +13,4 @@ def home(request):
 
 def page_detail(request, slug):
     page = get_object_or_404(Page, slug=slug)
-    return render(request, 'page.html', {'page': page}) 
+    return render(request, 'page.html', {'page': page})

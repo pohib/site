@@ -23,8 +23,36 @@ INSTALLED_APPS = [
     'core',
     'analytics',
     'vacancies',
+    'django_ckeditor_5',
 ]
 
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'fontColor': '#000000',
+        'uiColor': '#ffffff',
+        'fontBackgroundColor': '#ffffff',
+        'toolbar': ['heading', '|', 'bold', 'italic', 'link',
+                'bulletedList', 'numberedList', 'blockQuote', 'imageUpload'],
+        'language': 'ru',
+        'contentsCss': [ 
+            'https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/contents.css',
+            '/static/css/ckeditor5-custom.css'
+        ],
+        'image': {
+            'toolbar': ['imageTextAlternative', '|', 'imageStyle:alignLeft',
+                    'imageStyle:alignRight', 'imageStyle:alignCenter', 
+                    'imageStyle:side', '|'],
+            'styles': [
+                'full',
+                'side',
+                'alignLeft',
+                'alignRight',
+                'alignCenter',
+            ]
+        }
+    }
+}
+CKEDITOR_5_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -57,7 +85,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'wsgi.application'
+WSGI_APPLICATION = 'Site.wsgi.application'
 
 
 DATABASES = {
@@ -97,7 +125,10 @@ USE_TZ = True
 
 
 
-STATIC_URL = 'static/'
-
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
