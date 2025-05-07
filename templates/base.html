@@ -18,7 +18,7 @@
                     <img src="{% static 'img/logo.svg' %}" alt="C# Developer Insights" class="logo">
                     <div class="logo-text">
                         <h1>C# Developer Insights</h1>
-                        <p>Аналитика рынка труда для C# разработчиков</p>
+                        <p>Аналитика рынка труда для начинающих</p>
                     </div>
                 </a>
             </div>
@@ -33,10 +33,10 @@
             <div class="collapse navbar-collapse" id="mainNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item"><a class="nav-link" href="{% url 'home' %}"><i class="bi bi-house-door"></i> Главная</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'analytics:general_stats' %}"><i class="bi bi-bar-chart-line"></i> Общая статистика</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'analytics:demand' %}"><i class="bi bi-graph-up"></i> Востребованность</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'analytics:geography' %}"><i class="bi bi-globe"></i> География</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'analytics:skills' %}"><i class="bi bi-lightbulb"></i> Навыки</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'general_stats' %}"><i class="bi bi-bar-chart-line"></i> Общая статистика</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'demand' %}"><i class="bi bi-graph-up"></i> Востребованность</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'geography' %}"><i class="bi bi-globe"></i> География</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'skills' %}"><i class="bi bi-lightbulb"></i> Навыки</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'vacancies:latest' %}"><i class="bi bi-briefcase"></i> Вакансии</a></li>
                 </ul>
             </div>
@@ -53,7 +53,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <h5>О проекте</h5>
-                    <p>Аналитический портал для C# разработчиков. Анализ рынка труда, требований работодателей и тенденций развития.</p>
+                    <p>Аналитический посрал для начинающих C# разработчиков. Анализ рынка труда, требований работодателей и тенденций развития.</p>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <h5>Контакты</h5>
@@ -63,7 +63,7 @@
                 </div>
             </div>
             <div class="text-center mt-3">
-                <p class="mb-0">&copy; {% now "Y" %} C# Developer Insights</p>
+                <p class="mb-0">&copy; {% now "Y" %} ПРИКОЛЫ</p>
             </div>
         </div>
     </footer>

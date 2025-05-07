@@ -29,10 +29,49 @@ INSTALLED_APPS = [
 CKEDITOR_5_CONFIGS = {
     'default': {
         'fontColor': '#000000',
+        'fontSize': {
+            'options': [
+                'default',
+                '10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'
+            ],
+        },
+        'fontFamily': {
+            'options': [
+                'default',
+                'Arial, sans-serif',
+                'Courier New, Courier, monospace',
+                'Georgia, serif',
+                'Times New Roman, Times, serif',
+                'Verdana, Geneva, sans-serif'
+            ],
+        },
         'uiColor': '#ffffff',
         'fontBackgroundColor': '#ffffff',
-        'toolbar': ['heading', '|', 'bold', 'italic', 'link',
-                'bulletedList', 'numberedList', 'blockQuote', 'imageUpload'],
+        'toolbar': [
+            'heading',
+            '|',
+            'bold',
+            'italic',
+            'underline',
+            'strikethrough',
+            '|',
+            'fontSize',
+            'fontFamily',
+            'fontColor',
+            'fontBackgroundColor',
+            '|',
+            'alignment',
+            '|',
+            'bulletedList',
+            'numberedList',
+            '|',
+            'link',
+            'blockQuote',
+            'imageUpload',
+            '|',
+            'undo',
+            'redo'
+        ],
         'language': 'ru',
         'contentsCss': [ 
             'https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/contents.css',
@@ -52,6 +91,7 @@ CKEDITOR_5_CONFIGS = {
         }
     }
 }
+
 CKEDITOR_5_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
