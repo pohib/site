@@ -35,8 +35,8 @@ class SalaryByCity(models.Model):
         default=False,
         help_text=_('Отметка для статистики по конкретной профессии')
     )
-    lat = models.FloatField(null=True, blank=True)
-    lon = models.FloatField(null=True, blank=True)
+    lat = models.FloatField(_('Широта'), help_text = _('Координата X от экватора'), null=True, blank=True)
+    lon = models.FloatField(_('Долгота'), help_text = _('Координата Y от экватора'), null=True, blank=True)
 
     class Meta:
         verbose_name = _('статистику по городам')

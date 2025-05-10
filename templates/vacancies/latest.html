@@ -129,9 +129,14 @@
                                 <span class="mx-2">|</span>
                                 <i class="bi bi-geo-alt"></i> {{ vacancy.region }}
                                 <span class="mx-2">|</span>
-                                <i class="bi bi-clock"></i> {{ vacancy.published_at|date:"d.m.Y H:i" }}
+                                <i class="bi bi-clock"></i> 
+                                {% if vacancy.published_at %}
+                                    {{ vacancy.published_at|date:"d.m.Y H:i" }}
+                                {% else %}
+                                    Дата не указана
+                                {% endif %}
                             </p>
-                            
+                                                       
                             {% if vacancy.skills %}
                             <div class="mb-2">
                                 {% for skill in vacancy.skills_list %}
@@ -140,8 +145,8 @@
                             </div>
                             {% endif %}
                             
-                            <div class="card-text mb-2">
-                                {{ vacancy.description|truncatewords:30|safe }}
+                            <div class="card-text mb-2 description-content">
+                                {{ vacancy.description|striptags|truncatewords:30 }}
                             </div>
                             
                             <a href="{{ vacancy.url }}" target="_blank" class="btn btn-outline-primary">

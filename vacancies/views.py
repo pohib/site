@@ -6,6 +6,7 @@ from .models import Vacancy
 from datetime import datetime
 from django.core.cache import cache
 from django.utils.timezone import make_aware
+import dateutil.parser
 from xml.etree import ElementTree as ET
 from django.conf import settings
 import logging
@@ -16,7 +17,7 @@ MAX_SALARY = 10_000_000
 
 def is_primary_csharp_vacancy(vacancy_name, description):
     name_pattern = re.compile(r'C#|\.NET|c\s*sharp', re.IGNORECASE)
-    desc_pattern = re.compile(r'(требован(ия|ий)|требуется|ищем|ищется).*?(C#|\.NET|c\s*sharp)', re.IGNORECASE)
+    desc_pattern = re.compile(r'(требован(ия|ий)|требуется|ищем|ищется|нужен).*?(C#|\.NET|c\s*sharp)', re.IGNORECASE)
     
     if not name_pattern.search(vacancy_name):
         return False
@@ -100,7 +101,20 @@ def latest_vacancies(request):
                 
                 if city_filter and city_filter.lower() not in region.lower():
                     continue
-                
+
+                published_at_str = vacancy_data.get('published_at')
+
+                if published_at_str:
+                    try:
+                        published_at = dateutil.parser.parse(published_at_str)
+                        if timezone.is_naive(published_at):
+                            published_at = make_aware(published_at)
+                    except (ValueError, TypeError) as e:
+                        logger.error(f"Error parsing published_at: {str(e)}")
+                        published_at = timezone.now()
+                else:
+                    published_at = timezone.now()
+
                 vacancy = Vacancy.objects.create(
                     title=vacancy_data.get('name', 'Без названия'),
                     description=vacancy_detail.get('description', ''),
@@ -109,7 +123,7 @@ def latest_vacancies(request):
                     salary=salary_str,
                     salary_value=salary_value,
                     region=region,
-                    published_at=vacancy_data.get('published_at'),
+                    published_at=published_at,                    
                     url=vacancy_data.get('alternate_url', '#'),
                     company_logo=logo_url
                 )
