@@ -11,7 +11,7 @@ def general_stats(request):
     vacancy_share_by_city = SalaryByCity.objects.filter(is_for_profession=False).order_by('-vacancy_share')
     skills = Skill.objects.filter(is_for_profession=False)
     
-    return render(request, 'templates/analytics/general_stats.html', {
+    return render(request, 'analytics/general_stats.html', {
         'salary_by_year': salary_by_year,
         'salary_by_city': salary_by_city,
         'vacancy_share_by_city': vacancy_share_by_city,
@@ -20,7 +20,7 @@ def general_stats(request):
 
 def demand(request):
     salary_by_year = SalaryByYear.objects.all()
-    return render(request, 'templates/analytics/demand.html', {
+    return render(request, 'analytics/demand.html', {
         'salary_by_year': salary_by_year,
     })
 
@@ -40,7 +40,7 @@ def geography(request):
             'count': city.vacancy_share if city.vacancy_share else 0
         })
     
-    return render(request, 'templates/analytics/geography.html', {
+    return render(request, 'analytics/geography.html', {
         'salary_by_city': salary_by_city,
         'vacancy_share_by_city': vacancy_share_by_city,
         'map_data': map_data,
@@ -48,6 +48,6 @@ def geography(request):
 
 def skills(request):
     skills = Skill.objects.filter(is_for_profession=True)
-    return render(request, 'templates/analytics/skills.html', {
+    return render(request, 'analytics/skills.html', {
         'skills': skills,
     })

@@ -1,4 +1,5 @@
 import requests
+from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.utils import timezone
 from datetime import timedelta
@@ -32,6 +33,8 @@ def latest_vacancies(request):
         sort_by = request.GET.get('sort', None)
         order = request.GET.get('order', 'desc')
         city_filter = request.GET.get('city', None)
+        page = int(request.GET.get('page', 1))
+        per_page = 10
 
         params = {
             "text": "C# developer OR C# программист",
@@ -99,9 +102,6 @@ def latest_vacancies(request):
                 area = vacancy_data.get('area', {})
                 region = area.get('name', '') if area else ''
                 
-                if city_filter and city_filter.lower() not in region.lower():
-                    continue
-
                 published_at_str = vacancy_data.get('published_at')
 
                 if published_at_str:
@@ -131,13 +131,19 @@ def latest_vacancies(request):
                 
                 if len(vacancies) >= 10:
                     break
-                
+
             except (requests.RequestException, KeyError, AttributeError) as e:
                 logger.error(f"Error processing vacancy {vacancy_data.get('id')}: {str(e)}", exc_info=True)
                 continue
-        
+
+        if city_filter:
+            vacancies = [v for v in vacancies if city_filter.lower() in v.region.lower()] 
+             
         Vacancy.objects.exclude(id__in=[v.id for v in vacancies]).delete()
-        
+
+        paginator = Paginator(vacancies, per_page)
+        page_obj = paginator.get_page(page)
+
         if sort_by == 'salary':
             reverse_order = order == 'desc'
             vacancies.sort(key=lambda x: x.salary_value or 0, reverse=reverse_order)
@@ -148,7 +154,7 @@ def latest_vacancies(request):
         all_cities = list(set(v.region for v in Vacancy.objects.all() if v.region))
         
         return render(request, 'vacancies/latest.html', {
-            'vacancies': vacancies,
+            'vacancies': page_obj,
             'sort_by': sort_by,
             'order': order,
             'selected_city': city_filter,

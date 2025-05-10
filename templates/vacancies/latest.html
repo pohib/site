@@ -120,6 +120,10 @@
                                 {% if vacancy.salary %}
                                 <span class="badge bg-success salary-badge">
                                     {{ vacancy.salary }}
+                                    {% if vacancy.salary_value and "RUB" not in vacancy.salary %}
+                                        <br>
+                                        <small>(~{{ vacancy.salary_value|floatformat:"0" }} RUB)</small>
+                                    {% endif %}
                                 </span>
                                 {% endif %}
                             </div>
