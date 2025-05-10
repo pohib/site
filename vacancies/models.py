@@ -11,6 +11,7 @@ class Vacancy(models.Model):
     published_at = models.DateTimeField(_('Дата публикации'), help_text=_('Когда вакансия была опубликована'))
     url = models.URLField(_('Ссылка на вакансию'), help_text=_('URL оригинальной вакансии'))
     company_logo = models.URLField(_('Лого компании'), null=True, blank=True)
+    salary_value = models.FloatField(null=True, blank=True)
 
     class Meta:
         verbose_name = _('вакансию')

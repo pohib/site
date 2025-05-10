@@ -35,11 +35,14 @@ class SalaryByCity(models.Model):
         default=False,
         help_text=_('Отметка для статистики по конкретной профессии')
     )
+    lat = models.FloatField(null=True, blank=True)
+    lon = models.FloatField(null=True, blank=True)
 
     class Meta:
         verbose_name = _('статистику по городам')
         verbose_name_plural = _('Статистика по городам')
         ordering = ['-average_salary']
+        db_table = 'salary_by_city'
 
     def __str__(self):
         return _("Зарплаты в {}").format(self.city)

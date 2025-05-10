@@ -3,15 +3,6 @@
 
 {% block title %}Последние вакансии для C# разработчиков{% endblock %}
 
-{% block breadcrumbs %}
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Вакансии</li>
-    </ol>
-</nav>
-{% endblock %}
-
 {% block extra_css %}
 <style>
     .vacancy-card {
@@ -48,6 +39,17 @@
         border-radius: 4px;
         margin-right: 15px;
     }
+    
+    .sort-controls {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    
+    .sort-icon {
+        margin-left: 5px;
+    }
 </style>
 {% endblock %}
 
@@ -57,6 +59,45 @@
         <div class="col-md-12">
             <h2 class="mb-4"><i class="bi bi-briefcase"></i> Последние вакансии</h2>
             <p class="lead">Свежие вакансии для C# разработчиков за последние 24 часа</p>
+        </div>
+    </div>
+
+    <div class="sort-controls">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="cityFilter" class="form-label">Фильтр по городу:</label>
+                    <select class="form-select" id="cityFilter" onchange="updateCityFilter(this)">
+                        <option value="">Все города</option>
+                        {% for city in all_cities %}
+                        <option value="{{ city }}" {% if selected_city == city %}selected{% endif %}>{{ city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Сортировка:</label>
+                    <div class="btn-group" role="group">
+                        <a href="?sort=salary&order=desc{% if selected_city %}&city={{ selected_city }}{% endif %}" 
+                           class="btn btn-outline-secondary {% if sort_by == 'salary' and order == 'desc' %}active{% endif %}">
+                            Зарплата <i class="bi bi-sort-down sort-icon"></i>
+                        </a>
+                        <a href="?sort=salary&order=asc{% if selected_city %}&city={{ selected_city }}{% endif %}" 
+                           class="btn btn-outline-secondary {% if sort_by == 'salary' and order == 'asc' %}active{% endif %}">
+                            Зарплата <i class="bi bi-sort-up sort-icon"></i>
+                        </a>
+                        <a href="?sort=city&order=asc{% if selected_city %}&city={{ selected_city }}{% endif %}" 
+                           class="btn btn-outline-secondary {% if sort_by == 'city' %}active{% endif %}">
+                            Город <i class="bi bi-sort-alpha-down sort-icon"></i>
+                        </a>
+                        <a href="?{% if selected_city %}city={{ selected_city }}{% endif %}" 
+                           class="btn btn-outline-secondary {% if not sort_by %}active{% endif %}">
+                            По умолчанию
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -132,5 +173,29 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.reload();
     }, 300000); 
 });
+
+function updateCityFilter(select) {
+    const city = select.value;
+    const url = new URL(window.location.href);
+    
+    if (city) {
+        url.searchParams.set('city', city);
+    } else {
+        url.searchParams.delete('city');
+    }
+    
+    const sortBy = '{{ sort_by }}';
+    const order = '{{ order }}';
+    
+    if (sortBy) {
+        url.searchParams.set('sort', sortBy);
+        url.searchParams.set('order', order);
+    } else {
+        url.searchParams.delete('sort');
+        url.searchParams.delete('order');
+    }
+    
+    window.location.href = url.toString();
+}
 </script>
 {% endblock %}

@@ -43,7 +43,7 @@
     <div class="row mb-4">
         <div class="col-md-12">
             <h2 class="mb-4"><i class="bi bi-globe"></i> География зарплат</h2>
-            <p class="lead">Распределение зарплат и вакансий для C# разработчиков по городам России</p>
+            <p class="lead">Распределение зарплат и вакансий для C# разработчиков по городам</p>
         </div>
     </div>
 
@@ -63,7 +63,6 @@
                                 <tr>
                                     <th>Город</th>
                                     <th>Зарплата (₽)</th>
-                                    <th>Изменение</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -71,13 +70,9 @@
                                 <tr>
                                     <td>
                                         <span class="badge bg-primary city-badge">{{ forloop.counter }}</span>
-                                        {{ city.name }}
+                                        {{ city.city }}
                                     </td>
-                                    <td>{{ city.salary|floatformat:"0" }}</td>
-                                    <td class="{% if city.change > 0 %}text-success{% else %}text-danger{% endif %}">
-                                        {{ city.change|floatformat:"1" }}%
-                                        {% if city.change > 0 %}<i class="bi bi-arrow-up"></i>{% else %}<i class="bi bi-arrow-down"></i>{% endif %}
-                                    </td>
+                                    <td>{{ city.average_salary|floatformat:"0" }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -101,19 +96,17 @@
                             <thead>
                                 <tr>
                                     <th>Город</th>
-                                    <th>Вакансии</th>
                                     <th>Доля рынка</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for city in vacancy_by_city %}
+                                {% for city in vacancy_share_by_city %}
                                 <tr>
                                     <td>
                                         <span class="badge bg-primary city-badge">{{ forloop.counter }}</span>
-                                        {{ city.name }}
+                                        {{ city.city }}
                                     </td>
-                                    <td>{{ city.count }}</td>
-                                    <td>{{ city.share|floatformat:"2" }}%</td>
+                                    <td>{{ city.vacancy_share|floatformat:"2" }}%</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -147,10 +140,10 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('salaryGeoChart'), {
         type: 'bar',
         data: {
-            labels: [{% for city in salary_by_city %}"{{ city.name }}",{% endfor %}],
+            labels: [{% for city in salary_by_city %}"{{ city.city }}",{% endfor %}],
             datasets: [{
                 label: 'Средняя зарплата (₽)',
-                data: [{% for city in salary_by_city %}{{ city.salary }},{% endfor %}],
+                data: [{% for city in salary_by_city %}{{ city.average_salary }},{% endfor %}],
                 backgroundColor: 'rgba(54, 162, 235, 0.7)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1
@@ -179,9 +172,9 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('vacancyGeoChart'), {
         type: 'doughnut',
         data: {
-            labels: [{% for city in vacancy_by_city %}"{{ city.name }}",{% endfor %}],
+            labels: [{% for city in vacancy_share_by_city %}"{{ city.city }}",{% endfor %}],
             datasets: [{
-                data: [{% for city in vacancy_by_city %}{{ city.share }},{% endfor %}],
+                data: [{% for city in vacancy_share_by_city %}{{ city.vacancy_share }},{% endfor %}],
                 backgroundColor: [
                     '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', 
                     '#e74a3b', '#858796', '#5a5c69', '#3a3b45',
@@ -207,18 +200,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    const map = L.map('map').setView([55.76, 37.64], 4);
+    const map = L.map('map').setView([20, 0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
 
     {% for city in map_data %}
+    {% if city.lat and city.lon %}
     L.marker([{{ city.lat }}, {{ city.lon }}]).addTo(map)
         .bindPopup(`
-            <b>${city.name}</b><br>
-            Зарплата: ${city.salary.toLocaleString('ru-RU')} ₽<br>
-            Вакансий: ${city.count}
+            <b>{{ city.city }}</b><br>
+            {% if city.average_salary %}Зарплата: {{ city.average_salary|floatformat:"0" }} ₽<br>{% endif %}
+            {% if city.vacancy_share %}Доля вакансий: {{ city.vacancy_share|floatformat:"2" }}%{% endif %}
         `);
+    {% endif %}
     {% endfor %}
 });
 </script>

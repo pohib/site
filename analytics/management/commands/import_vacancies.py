@@ -1,3 +1,6 @@
+from geopy.geocoders import Nominatim
+from geopy.extra.rate_limiter import RateLimiter
+import time
 import csv
 from django.core.management.base import BaseCommand
 from analytics.models import SalaryByYear, SalaryByCity, Skill
@@ -18,7 +21,7 @@ getcontext().prec = 6
 
 class Command(BaseCommand):
     help = 'Import vacancies data from CSV file with daily currency conversion'
-    
+
     def add_arguments(self, parser):
         parser.add_argument('file_path', type=str, help='Path to CSV file')
         parser.add_argument('--max-salary', type=int, default=10000000, help='Maximum allowed salary')
@@ -268,8 +271,16 @@ class Command(BaseCommand):
         total_prof_vacancies = sum(city['prof_vacancies'] for city in self.city_stats.values())
         
         city_objects = []
+        processed_cities = set()
         
-        for city, stats in tqdm(self.city_stats.items(), desc="Cities"):
+        for city in tqdm(self.city_stats.keys(), desc="Получение координат"):
+            if city not in processed_cities:
+                lat, lon = self.get_city_coordinates(city)
+                processed_cities.add(city)
+        
+        for city, stats in tqdm(self.city_stats.items(), desc="Создание объектов"):
+            lat, lon = self.get_city_coordinates(city)
+            
             if stats['all_salaries']:
                 avg_salary = sum(stats['all_salaries'])/len(stats['all_salaries'])
                 share = (stats['all_vacancies']/total_all_vacancies)*100 if total_all_vacancies else 0
@@ -279,7 +290,9 @@ class Command(BaseCommand):
                         city=city,
                         average_salary=avg_salary,
                         vacancy_share=share,
-                        is_for_profession=False
+                        is_for_profession=False,
+                        lat=lat,
+                        lon=lon
                     )
                 )
                 
@@ -292,12 +305,14 @@ class Command(BaseCommand):
                         city=city,
                         average_salary=avg_salary,
                         vacancy_share=share,
-                        is_for_profession=True
+                        is_for_profession=True,
+                        lat=lat,
+                        lon=lon
                     )
                 )
-                
         SalaryByCity.objects.bulk_create(city_objects, batch_size=1000)
-        
+            
+            
     def save_skills(self):
         self.stdout.write("Сохранение навыков...")
         
@@ -320,3 +335,17 @@ class Command(BaseCommand):
             ) for (skill, year), count in tqdm(self.skills_stats.items(), desc="Profession skills")
             if count > 0
         ], batch_size=1000)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.geolocator = Nominatim(user_agent="vacancies_analysis")
+        self.geocode = RateLimiter(self.geolocator.geocode, min_delay_seconds=1)
+        
+    def get_city_coordinates(self, city_name):
+        try:
+            location = self.geocode(f"{city_name}")
+            if location:
+                return location.latitude, location.longitude
+        except Exception as e:
+            logger.warning(f"Не удалось получить координаты для {city_name}: {e}")
+        return None, None
