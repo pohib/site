@@ -138,7 +138,7 @@ def latest_vacancies(request):
 
         if city_filter:
             vacancies = [v for v in vacancies if city_filter.lower() in v.region.lower()] 
-             
+            
         Vacancy.objects.exclude(id__in=[v.id for v in vacancies]).delete()
 
         paginator = Paginator(vacancies, per_page)

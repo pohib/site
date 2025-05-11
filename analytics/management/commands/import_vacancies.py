@@ -1,5 +1,3 @@
-from geopy.geocoders import Nominatim
-from geopy.extra.rate_limiter import RateLimiter
 import time
 import csv
 from django.core.management.base import BaseCommand
@@ -338,14 +336,54 @@ class Command(BaseCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.geolocator = Nominatim(user_agent="vacancies_analysis")
-        self.geocode = RateLimiter(self.geolocator.geocode, min_delay_seconds=1)
+        self.yandex_api_key = "25e17625-2184-4bea-bd71-15e9f532b772"
+        self.geocoder_url = "https://geocode-maps.yandex.ru/1.x/"
+        self.coordinates_cache = {}
+        self.request_delay = 0.2
+        self.last_request_time = 0
         
     def get_city_coordinates(self, city_name):
+        if not city_name:
+            return None, None
+        
+        if city_name in self.coordinates_cache:
+            return self.coordinates_cache[city_name]
+        
+        elapsed = time.time() - self.last_request_time
+        if elapsed < self.request_delay:
+            time.sleep(self.request_delay - elapsed)
+            
         try:
-            location = self.geocode(f"{city_name}")
-            if location:
-                return location.latitude, location.longitude
+            params = {
+                'geocode': city_name,
+                'format': 'json',
+                'apikey': self.yandex_api_key,
+                'results': 1,
+                'kind': 'locality'
+            }
+
+            response = requests.get(self.geocoder_url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            features = data.get('response', {}).get('GeoObjectCollection', {}).get('featureMember', [])
+            if not features:
+                logger.debug(f"Город не найден: {city_name}")
+                return None, None
+                
+            geo_object = features[0]['GeoObject']
+            pos = geo_object['Point']['pos']
+            lon, lat = map(float, pos.split())
+            
+            self.coordinates_cache[city_name] = (lat, lon)
+            self.last_request_time = time.time()
+            self.coordinates_cache[city_name] = (lat, lon) 
+            
+            logger.debug(f"Найдены координаты для {city_name}: {lat}, {lon}")
+            return lat, lon
+            
         except Exception as e:
-            logger.warning(f"Не удалось получить координаты для {city_name}: {e}")
-        return None, None
+            logger.warning(f"Ошибка геокодирования для {city_name}: {e}")
+            self.coordinates_cache[city_name] = (None, None)
+            return None, None

@@ -1,7 +1,7 @@
 from django.db import migrations
 
 def create_homepage(apps, schema_editor):
-    HomePage = apps.get_model('core', 'HomePage')
+    HomePage = apps.get_model('core', 'Page')
     HomePage.objects.create(
         title='Главная',
         content='<p>Ваш HTML-контент здесь</p>'

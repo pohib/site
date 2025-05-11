@@ -35,6 +35,32 @@
         font-size: 0.8rem;
         margin-right: 5px;
     }
+    
+    /* Стили для балунов Yandex Maps */
+    .ymaps-balloon {
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .ymaps-balloon__content {
+        margin: 0;
+        padding: 0;
+    }
+    
+    .balloon-content {
+        font-family: Arial, sans-serif;
+    }
+    
+    .balloon-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #333;
+    }
+    
+    .balloon-text {
+        margin: 3px 0;
+        color: #555;
+    }
 </style>
 {% endblock %}
 
@@ -132,8 +158,7 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+<script src="https://api-maps.yandex.ru/2.1/?apikey=25e17625-2184-4bea-bd71-15e9f532b772&lang=ru_RU" type="text/javascript"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -200,21 +225,80 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    const map = L.map('map').setView([20, 0], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
+    ymaps.ready(initMap);
+    
+    function initMap() {
+        const map = new ymaps.Map('map', {
+            center: [55.76, 37.64],
+            zoom: 3,
+            controls: ['zoomControl', 'typeSelector', 'fullscreenControl']
+        });
 
-    {% for city in map_data %}
-    {% if city.lat and city.lon %}
-    L.marker([{{ city.lat }}, {{ city.lon }}]).addTo(map)
-        .bindPopup(`
-            <b>{{ city.city }}</b><br>
-            {% if city.average_salary %}Зарплата: {{ city.average_salary|floatformat:"0" }} ₽<br>{% endif %}
-            {% if city.vacancy_share %}Доля вакансий: {{ city.vacancy_share|floatformat:"2" }}%{% endif %}
-        `);
-    {% endif %}
-    {% endfor %}
+        const clusterer = new ymaps.Clusterer({
+            preset: 'islands#invertedVioletClusterIcons',
+            clusterDisableClickZoom: true,
+            clusterHideIconOnBalloonOpen: false,
+            geoObjectHideIconOnBalloonOpen: false
+        });
+
+        const geoObjects = [];
+
+        {% for city in map_data %}
+        {% if city.lat and city.lon %}
+        (function() {
+            const cityData = {
+                city: "{{ city.city }}",
+                salary: {% if city.average_salary %}{{ city.average_salary|floatformat:"0" }}{% else %}null{% endif %},
+                share: {% if city.vacancy_share %}{{ city.vacancy_share|floatformat:"2" }}{% else %}null{% endif %}
+            };
+            
+            // Создаем метку
+            const placemark = new ymaps.Placemark(
+                [{{ city.lat }}, {{ city.lon }}],
+                {
+                    balloonContentHeader: `<div class="balloon-title">${cityData.city}</div>`,
+                    balloonContentBody: `
+                        <div class="balloon-content">
+                            ${cityData.salary ? `<p class="balloon-text">Зарплата: ${cityData.salary.toLocaleString('ru-RU')} ₽</p>` : ''}
+                            ${cityData.share ? `<p class="balloon-text">Доля вакансий: ${cityData.share}%</p>` : ''}
+                        </div>
+                    `,
+                    hintContent: cityData.city
+                },
+                {
+                    preset: 'islands#violetIcon'
+                }
+            );
+            
+            geoObjects.push(placemark);
+        })();
+        {% endif %}
+        {% endfor %}
+        
+        // Добавляем метки в кластеризатор
+        clusterer.add(geoObjects);
+        map.geoObjects.add(clusterer);
+        
+        // Автоматически подбираем масштаб и центр карты
+        if (geoObjects.length > 0) {
+            map.setBounds(clusterer.getBounds(), {
+                checkZoomRange: true,
+                zoomMargin: 50
+            });
+        }
+    }
+    
+    // Инициализация DataTables
+    $('.data-table').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
+        },
+        searching: false,
+        lengthChange: false,
+        info: false,
+        paging: false,
+        order: []
+    });
 });
 </script>
 {% endblock %}
