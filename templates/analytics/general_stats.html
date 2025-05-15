@@ -96,25 +96,25 @@
             <div class="table-chart-combo">
                 <div class="table-responsive">
                     <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Город</th>
-                                <th>Средняя зарплата (руб)</th>
-                                <th>Разница со средним (%)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in salary_by_city|slice:":10" %}
-                            <tr>
-                                <td>{{ item.city }}</td>
-                                <td>{{ item.average_salary|floatformat:2 }}</td>
-                                <td class="{% if item.difference > 0 %}text-success{% else %}text-danger{% endif %}">
-                                    {{ item.difference|floatformat:2 }}%
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    <thead>
+                        <tr>
+                            <th>Город</th>
+                            <th>Средняя зарплата (руб)</th>
+                            <th>Разница со средним (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for city in salary_by_city %}
+                        <tr>
+                            <td>{{ city.city }}</td>
+                            <td>{{ city.average_salary|floatformat:2 }}</td>
+                            <td class="{% if city.difference > 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ city.difference|floatformat:2 }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
                 </div>
                 <div>
                     <img src="{{ MEDIA_URL }}charts/salary_by_city.png" alt="Зарплаты по городам" class="chart-img">
@@ -143,7 +143,7 @@
                             <tr>
                                 <td>{{ item.city }}</td>
                                 <td>{{ item.vacancy_count }}</td>
-                                <td>{{ item.share|floatformat:2 }}%</td>
+                                <td>{{ item.vacancy_share|floatformat:2 }}%</td>
                             </tr>
                             {% endfor %}
                         </tbody>

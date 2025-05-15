@@ -11,6 +11,8 @@ from matplotlib import rcParams
 from matplotlib import patheffects
 import seaborn as sns
 from analytics.models import SalaryByYear, SalaryByCity, Skill
+import json
+from collections import defaultdict
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -41,8 +43,6 @@ CHART_STYLES = {
     }
 }
 
-
-
 def configure_plot_style():
     sns.set_style("darkgrid")
     rcParams['font.family'] = CHART_STYLES['font']['family']
@@ -62,7 +62,11 @@ def configure_plot_style():
 def setup_environment():
     charts_dir = Path(settings.MEDIA_ROOT) / 'charts'
     charts_dir.mkdir(parents=True, exist_ok=True)
-    return charts_dir
+    
+    data_dir = Path(settings.MEDIA_ROOT) / 'data'
+    data_dir.mkdir(parents=True, exist_ok=True)
+    
+    return charts_dir, data_dir
 
 def format_currency(x, pos):
     return f'{int(x):,}'.replace(',', ' ')
@@ -72,20 +76,213 @@ currency_formatter = FuncFormatter(format_currency)
 def filter_extreme_salaries(salaries):
     return [min(s, MAX_SALARY) if s is not None else None for s in salaries]
 
+def save_data_to_json(data, filename):
+    data_dir = Path(settings.MEDIA_ROOT) / 'data'
+    data_dir.mkdir(exist_ok=True, parents=True)
+    
+    filepath = data_dir / filename
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    logger.info(f"Данные сохранены в {filepath}")
+
+def get_salary_by_year_data():
+    data = SalaryByYear.objects.all().order_by('year')
+    result = {
+        'years': [item.year for item in data],
+        'avg_salaries': [item.average_salary for item in data],
+        'prof_salaries': [item.profession_average_salary for item in data],
+        'vacancy_counts': [item.vacancy_count for item in data],
+        'prof_vacancy_counts': [item.profession_vacancy_count for item in data],
+    }
+    save_data_to_json(result, 'salary_by_year.json')
+    return result
+
+def get_salary_by_city_data():
+    EXCLUDE_COUNTRIES = [
+            'австралия', 'австрия', 'азербайджан', 'албания', 'алжир', 
+            'ангола', 'андорра', 'антигуа и барбуда', 'аргентина', 'армения',
+            'афганистан', 'багамы', 'бангладеш', 'барбадос', 'бахрейн', 'беларусь', 'белиз',
+            'бельгия', 'бенин', 'болгария', 'боливия', 'босния и герцеговина', 'ботсвана',
+            'бразилия', 'бруней', 'буркина-фасо', 'бурунди', 'бутан', 'вануату', 'ватикан',
+            'великобритания', 'венгрия', 'венесуэла', 'восточный тимор', 'вьетнам', 'габон',
+            'гаити', 'гамбия', 'гана', 'гватемала', 'гвинея', 'гвинея-бисау', 'германия',
+            'гондурас', 'гренада', 'греция', 'грузия', 'дания', 'джибути', 'доминика',
+            'доминиканская республика', 'египет', 'замбия', 'зимбабве', 'израиль', 'индия',
+            'индонезия', 'иордания', 'ирак', 'иран', 'ирландия', 'исландия', 'испания',
+            'италия', 'йемен', 'кабо-верде', 'казахстан', 'камбоджа', 'камерун', 'канада',
+            'катар', 'кения', 'кипр', 'киргизия', 'кирибати', 'китай', 'колумбия', 'коморы',
+            'конго', 'коста-рика', 'кот-д’ивуар', 'куба', 'кувейт', 'лаос', 'латвия',
+            'лесото', 'либерия', 'ливан', 'ливия', 'литва', 'лихтенштейн', 'люксембург',
+            'маврикий', 'мавритания', 'мадагаскар', 'малави', 'малайзия', 'мали', 'мальта',
+            'маршалловы острова', 'марокко', 'мексика', 'микронезия', 'мозамбик', 'молдова',
+            'монако', 'монголия', 'мьянма', 'намибия', 'науру', 'непал', 'нигер', 'нигерия',
+            'нидерланды', 'никарагуа', 'новая зеландия', 'норвегия', 'оман', 'пакистан',
+            'палау', 'панама', 'папуа — новая гвинея', 'парагвай', 'перу', 'польша',
+            'португалия', 'республика корея', 'республика конго', 'россия', 'руанда',
+            'румыния', 'сальвадор', 'самоа', 'сан-марино', 'сан-томе и принципе',
+            'саудовская аравия', 'северная корея', 'северная македония', 'сейшелы', 'сенгал',
+            'сент-винсент и гренадины', 'сент-китс и невис', 'сент-люсия', 'сербия',
+            'сингапур', 'сирия', 'словакия', 'словения', 'соединённые штаты америки', 'сомали',
+            'судан', 'суринам', 'сьерра-леоне', 'таджикистан', 'таиланд', 'танзания', 'того',
+            'тонга', 'тринидад и тобаго', 'тувалу', 'тунис', 'туркменистан', 'турция',
+            'уганда', 'узбекистан', 'украина', 'уругвай', 'федеративные штаты микронезии',
+            'фиджи', 'филиппины', 'финляндия', 'франция', 'хорватия', 'центральноафриканская республика',
+            'чад', 'черногория', 'чехия', 'чили', 'швейцария', 'швеция', 'шри-ланка', 'эквадор',
+            'экваториальная гвинея', 'эритрея', 'эсватини', 'эстония', 'эфиопия', 'юар',
+            'южный судан', 'ямайка', 'япония',
+            'российская федерация', 'республика беларусь', 'княжество монако', 
+            'сша', 'америка', 'великобритания', 'соединенное королевство', 'объединенные арабские эмираты',
+            'оаэ', 'кнр', 'кыргызстан', 'кот-д’ивуар', 'берег слоновой кости', 'др конго',
+            'демократическая республика конго', 'южная корея', 'северная ирландия', 'тайвань',
+            'палестина', 'государство палестина', 'макао', 'гонконг', 'бруней-даруссалам',
+            'кабо-верде', 'острова кука', 'виргинские острова', 'кюрасао', 'сент-люсия',
+            'сейшельские острова', 'тринидад и тобаго', 'антигуа и барбуда', 'сент-китс и невис',
+            'сан-томе и принсипи', 'сао-томе и принсипи'
+        ]
+    
+    data_prof = SalaryByCity.objects.filter(
+        is_for_profession=True,
+        average_salary__isnull=False,
+        average_salary__lte=MAX_SALARY
+    ).exclude(
+        city__iregex=r'^(?!.*\().*$'
+    ).exclude(
+        city__iregex='|'.join([f'^{country}$' for country in EXCLUDE_COUNTRIES])
+    ).order_by('-average_salary')[:10]
+    
+    if not data_prof:            
+        data_prof = SalaryByCity.objects.filter(
+            is_for_profession=True,
+            average_salary__isnull=False,
+            average_salary__lte=MAX_SALARY,
+            city__regex=r'^[а-яА-ЯёЁ\-]+$'
+        ).exclude(
+            city__iregex='|'.join(EXCLUDE_COUNTRIES)
+        ).order_by('-average_salary')[:10]
+    
+    def clean_city_name(city):
+        if '(' in city:
+            return city.split('(')[0].strip()
+        return city
+    
+    prof_cities = [clean_city_name(item.city) for item in data_prof]
+    original_city_names = [item.city for item in data_prof]
+    
+    data_all = SalaryByCity.objects.filter(
+        is_for_profession=False,
+        city__in=original_city_names,
+        average_salary__isnull=False,
+        average_salary__lte=MAX_SALARY
+    ).order_by('-average_salary')
+    
+    all_salaries_dict = {clean_city_name(item.city): item.average_salary for item in data_all}
+    prof_salaries_dict = {clean_city_name(item.city): item.average_salary for item in data_prof}
+    
+    cities = []
+    all_salaries = []
+    csharp_salaries = []
+    
+    for city, original_name in zip(prof_cities, original_city_names):
+        if city in all_salaries_dict:
+            cities.append(city)
+            all_salaries.append(all_salaries_dict[city])
+            csharp_salaries.append(prof_salaries_dict[city])
+    
+    result = {
+        'cities': cities,
+        'all_salaries': all_salaries,
+        'csharp_salaries': csharp_salaries,
+        'original_city_names': original_city_names
+    }
+    save_data_to_json(result, 'salary_by_city.json')
+    return result
+
+def get_vacancy_share_by_city_data():
+    data = SalaryByCity.objects.filter(is_for_profession=False).order_by('-vacancy_share')[:10]
+    result = {
+        'cities': [item.city for item in data],
+        'shares': [item.vacancy_share for item in data],
+        'vacancy_counts': [item.vacancy_share for item in data]
+    }
+    save_data_to_json(result, 'vacancy_share_by_city.json')
+    return result
+
+def get_top_skills_data():
+    def normalize_skill_name(name):
+        name = name.strip().lower()
+        if name.startswith('с#'):
+            name = 'c#' + name[2:]
+            
+        replacements = {
+            '.net framework': '.net',
+            'asp.net core': 'asp.net',
+            'ms sql': 'sql server',
+            'postgresql': 'postgres'
+        }
+        
+        for old, new in replacements.items():
+            if name == old:
+                name = new
+                break
+        return name
+    
+    all_skills = Skill.objects.filter(is_for_profession=True)        
+    skills_agg = {}
+    
+    for skill in all_skills:
+        original_name = skill.name.strip()
+        normalized_name = normalize_skill_name(original_name)
+        
+        if normalized_name in skills_agg:
+            if skill.count > skills_agg[normalized_name]['count']:
+                skills_agg[normalized_name] = {
+                    'display_name': original_name,
+                    'count': skill.count,
+                    'year': skill.year
+                }
+        else:
+            skills_agg[normalized_name] = {
+                'display_name': original_name,
+                'count': skill.count,
+                'year': skill.year
+            }
+    
+    top_skills = sorted(skills_agg.values(), 
+                    key=lambda x: x['count'], 
+                    reverse=True)
+    
+    skills_by_year = defaultdict(list)
+    for skill in Skill.objects.filter(is_for_profession=True):
+        normalized_name = normalize_skill_name(skill.name)
+        if normalized_name in [s['display_name'].lower() for s in top_skills]:
+            skills_by_year[skill.year].append({
+                'name': skill.name,
+                'count': skill.count
+            })
+    
+    result = {
+        'top_skills': top_skills,
+        'top_20_skills': top_skills[:20],
+        'skills_by_year': skills_by_year
+    }
+    save_data_to_json(result, 'top_skills.json')
+    return result
+
 def generate_salary_by_year_chart():
     try:
         configure_plot_style()
-        data = SalaryByYear.objects.all().order_by('year')
-        if not data:
+        data = get_salary_by_year_data()
+        
+        if not data['years']:
             logger.warning("Нет данных для salary_by_year_chart")
             return
 
-        years = [item.year for item in data]
-        avg_salaries = filter_extreme_salaries([item.average_salary for item in data])
-        prof_salaries = filter_extreme_salaries([item.profession_average_salary for item in data])
+        years = data['years']
+        avg_salaries = filter_extreme_salaries(data['avg_salaries'])
+        prof_salaries = filter_extreme_salaries(data['prof_salaries'])
 
-        fig, ax = plt.subplots(figsize=(14, 8))
-        plt.subplots_adjust(right=0.9, left = 0.01)
+        fig, ax = plt.subplots(figsize=CHART_STYLES['figure_size'])
+        plt.subplots_adjust(right=0.9, left=0.01)
         bar_width = 0.35
         index = np.arange(len(years))
         
@@ -174,7 +371,6 @@ def generate_salary_by_year_chart():
         ax.spines['left'].set_color(CHART_STYLES['colors']['grid'])
         ax.spines['bottom'].set_color(CHART_STYLES['colors']['grid'])
         
-        
         plt.tight_layout()
         output_path = Path(settings.MEDIA_ROOT) / 'charts' / 'salary_by_year.png'
         plt.savefig(output_path, dpi=CHART_STYLES['dpi'], bbox_inches='tight')
@@ -188,17 +384,17 @@ def generate_salary_by_year_chart():
 def generate_vacancies_by_year_chart():
     try:
         configure_plot_style()
+        data = get_salary_by_year_data()
         
-        data = SalaryByYear.objects.all().order_by('year')
-        if not data:
+        if not data['years']:
             logger.warning("Нет данных для vacancies_by_year_chart")
             return
 
-        years = [item.year for item in data]
-        total_vacancies = [item.vacancy_count for item in data]
-        prof_vacancies = [item.profession_vacancy_count for item in data]
+        years = data['years']
+        total_vacancies = data['vacancy_counts']
+        prof_vacancies = data['prof_vacancy_counts']
         
-        fig, ax = plt.subplots(figsize=(14, 8))
+        fig, ax = plt.subplots(figsize=CHART_STYLES['figure_size'])
         ax.set_yscale('log')
         
         line1 = ax.plot(
@@ -290,105 +486,17 @@ def generate_vacancies_by_year_chart():
 def generate_salary_by_city_chart():
     try:
         configure_plot_style()
-        EXCLUDE_COUNTRIES = [
-            'австралия', 'австрия', 'азербайджан', 'албания', 'алжир', 
-            'ангола', 'андорра', 'антигуа и барбуда', 'аргентина', 'армения',
-            'афганистан', 'багамы', 'бангладеш', 'барбадос', 'бахрейн', 'беларусь', 'белиз',
-            'бельгия', 'бенин', 'болгария', 'боливия', 'босния и герцеговина', 'ботсвана',
-            'бразилия', 'бруней', 'буркина-фасо', 'бурунди', 'бутан', 'вануату', 'ватикан',
-            'великобритания', 'венгрия', 'венесуэла', 'восточный тимор', 'вьетнам', 'габон',
-            'гаити', 'гамбия', 'гана', 'гватемала', 'гвинея', 'гвинея-бисау', 'германия',
-            'гондурас', 'гренада', 'греция', 'грузия', 'дания', 'джибути', 'доминика',
-            'доминиканская республика', 'египет', 'замбия', 'зимбабве', 'израиль', 'индия',
-            'индонезия', 'иордания', 'ирак', 'иран', 'ирландия', 'исландия', 'испания',
-            'италия', 'йемен', 'кабо-верде', 'казахстан', 'камбоджа', 'камерун', 'канада',
-            'катар', 'кения', 'кипр', 'киргизия', 'кирибати', 'китай', 'колумбия', 'коморы',
-            'конго', 'коста-рика', 'кот-д’ивуар', 'куба', 'кувейт', 'лаос', 'латвия',
-            'лесото', 'либерия', 'ливан', 'ливия', 'литва', 'лихтенштейн', 'люксембург',
-            'маврикий', 'мавритания', 'мадагаскар', 'малави', 'малайзия', 'мали', 'мальта',
-            'маршалловы острова', 'марокко', 'мексика', 'микронезия', 'мозамбик', 'молдова',
-            'монако', 'монголия', 'мьянма', 'намибия', 'науру', 'непал', 'нигер', 'нигерия',
-            'нидерланды', 'никарагуа', 'новая зеландия', 'норвегия', 'оман', 'пакистан',
-            'палау', 'панама', 'папуа — новая гвинея', 'парагвай', 'перу', 'польша',
-            'португалия', 'республика корея', 'республика конго', 'россия', 'руанда',
-            'румыния', 'сальвадор', 'самоа', 'сан-марино', 'сан-томе и принципе',
-            'саудовская аравия', 'северная корея', 'северная македония', 'сейшелы', 'сенгал',
-            'сент-винсент и гренадины', 'сент-китс и невис', 'сент-люсия', 'сербия',
-            'сингапур', 'сирия', 'словакия', 'словения', 'соединённые штаты америки', 'сомали',
-            'судан', 'суринам', 'сьерра-леоне', 'таджикистан', 'таиланд', 'танзания', 'того',
-            'тонга', 'тринидад и тобаго', 'тувалу', 'тунис', 'туркменистан', 'турция',
-            'уганда', 'узбекистан', 'украина', 'уругвай', 'федеративные штаты микронезии',
-            'фиджи', 'филиппины', 'финляндия', 'франция', 'хорватия', 'центральноафриканская республика',
-            'чад', 'черногория', 'чехия', 'чили', 'швейцария', 'швеция', 'шри-ланка', 'эквадор',
-            'экваториальная гвинея', 'эритрея', 'эсватини', 'эстония', 'эфиопия', 'юар',
-            'южный судан', 'ямайка', 'япония',
-            'российская федерация', 'республика беларусь', 'княжество монако', 
-            'сша', 'америка', 'великобритания', 'соединенное королевство', 'объединенные арабские эмираты',
-            'оаэ', 'кнр', 'кыргызстан', 'кот-д’ивуар', 'берег слоновой кости', 'др конго',
-            'демократическая республика конго', 'южная корея', 'северная ирландия', 'тайвань',
-            'палестина', 'государство палестина', 'макао', 'гонконг', 'бруней-даруссалам',
-            'кабо-верде', 'острова кука', 'виргинские острова', 'кюрасао', 'сент-люсия',
-            'сейшельские острова', 'тринидад и тобаго', 'антигуа и барбуда', 'сент-китс и невис',
-            'сан-томе и принсипи', 'сао-томе и принсипи'
-        ]
+        data = get_salary_by_city_data()
         
-        data_prof = SalaryByCity.objects.filter(
-            is_for_profession=True,
-            average_salary__isnull=False,
-            average_salary__lte=MAX_SALARY
-        ).exclude(
-            city__iregex=r'^(?!.*\().*$'
-        ).exclude(
-            city__iregex='|'.join([f'^{country}$' for country in EXCLUDE_COUNTRIES])
-        ).order_by('-average_salary')[:10]
-        
-        if not data_prof:            
-            data_prof = SalaryByCity.objects.filter(
-                is_for_profession=True,
-                average_salary__isnull=False,
-                average_salary__lte=MAX_SALARY,
-                city__regex=r'^[а-яА-ЯёЁ\-]+$'
-            ).exclude(
-                city__iregex='|'.join(EXCLUDE_COUNTRIES)
-            ).order_by('-average_salary')[:10]
-            
-            if not data_prof:
-                logger.warning("Нет данных по зарплатам C# разработчиков для построения графика")
-                return
-            
-        def clean_city_name(city):
-            if '(' in city:
-                return city.split('(')[0].strip()
-            return city
-        
-        prof_cities = [clean_city_name(item.city) for item in data_prof]
-        original_city_names = [item.city for item in data_prof]
-        
-        data_all = SalaryByCity.objects.filter(
-            is_for_profession=False,
-            city__in=original_city_names,
-            average_salary__isnull=False,
-            average_salary__lte=MAX_SALARY
-        ).order_by('-average_salary')
-        
-        all_salaries_dict = {clean_city_name(item.city): item.average_salary for item in data_all}
-        prof_salaries_dict = {clean_city_name(item.city): item.average_salary for item in data_prof}
-        
-        cities = []
-        all_salaries = []
-        csharp_salaries = []
-        
-        for city, original_name in zip(prof_cities, original_city_names):
-            if city in all_salaries_dict:
-                cities.append(city)
-                all_salaries.append(all_salaries_dict[city])
-                csharp_salaries.append(prof_salaries_dict[city])
-        
-        if not cities:
+        if not data['cities']:
             logger.warning("Нет данных для построения графика")
             return
         
-        fig, ax = plt.subplots(figsize=(14, 8))
+        cities = data['cities']
+        all_salaries = data['all_salaries']
+        csharp_salaries = data['csharp_salaries']
+        
+        fig, ax = plt.subplots(figsize=CHART_STYLES['figure_size'])
         plt.subplots_adjust(right=0.85)
         
         bar_height = 0.35
@@ -471,17 +579,17 @@ def generate_salary_by_city_chart():
         logger.error(f"Ошибка генерации графика: {str(e)}", exc_info=True)
         raise
     
-    
 def generate_vacancy_share_by_city_chart():
     try:
         configure_plot_style()
-        data = SalaryByCity.objects.filter(is_for_profession=False).order_by('-vacancy_share')[:10]
-        if not data:
+        data = get_vacancy_share_by_city_data()
+        
+        if not data['cities']:
             logger.warning("Нет данных для vacancy_share_by_city_chart")
             return
         
-        cities = [item.city for item in data]
-        shares = [item.vacancy_share for item in data]
+        cities = data['cities']
+        shares = data['shares']
         explode = [0.1] + [0]*(len(cities)-1)
         
         fig, ax = plt.subplots(figsize=(16, 10))
@@ -544,60 +652,16 @@ def generate_vacancy_share_by_city_chart():
 def generate_top_skills_chart():
     try:
         configure_plot_style()
+        data = get_top_skills_data()
         
-        def normalize_skill_name(name):
-            
-            name = name.strip().lower()
-            
-            if name.startswith('с#'):
-                name = 'c#' + name[2:]
-                
-            replacements = {
-                '.net framework': '.net',
-                'asp.net core': 'asp.net',
-                'ms sql': 'sql server',
-                'postgresql': 'postgres'
-            }
-            
-            for old, new in replacements.items():
-                if name == old:
-                    name = new
-                    break
-                    
-            return name
-        
-        all_skills = Skill.objects.filter(is_for_profession=True)        
-        skills_agg = {}
-        
-        for skill in all_skills:
-            original_name = skill.name.strip()
-            normalized_name = normalize_skill_name(original_name)
-            
-            if normalized_name in skills_agg:
-                if skill.count > skills_agg[normalized_name]['count']:
-                    skills_agg[normalized_name] = {
-                        'display_name': original_name,
-                        'count': skill.count
-                    }
-            else:
-                skills_agg[normalized_name] = {
-                    'display_name': original_name,
-                    'count': skill.count
-                }
-        
-        top_skills = sorted(skills_agg.values(), 
-                        key=lambda x: x['count'], 
-                        reverse=True)[:20]
-        
-        if not top_skills:
+        if not data['top_20_skills']:
             logger.warning("Нет данных по навыкам для C# разработчиков")
             return
         
+        skill_names = [skill['display_name'] for skill in data['top_20_skills']]
+        counts = [skill['count'] for skill in data['top_20_skills']]
         
-        skill_names = [skill['display_name'] for skill in top_skills]
-        counts = [skill['count'] for skill in top_skills]
-        
-        fig, ax = plt.subplots(figsize=(14, 8))
+        fig, ax = plt.subplots(figsize=CHART_STYLES['figure_size'])
         
         bar_color = CHART_STYLES['colors']['general']
         text_color = CHART_STYLES['colors']['text']
@@ -652,7 +716,6 @@ def generate_top_skills_chart():
         
         plt.subplots_adjust(left=0.4, right=0.9, top=0.95, bottom=0.05)
         
-        
         output_path = Path(settings.MEDIA_ROOT) / 'charts' / 'top_skills.png'
         plt.savefig(output_path, dpi=CHART_STYLES['dpi'], bbox_inches='tight')
         plt.close()
@@ -664,8 +727,13 @@ def generate_top_skills_chart():
 
 def generate_all_charts():
     try:
-        setup_environment()
-        logger.info("Начало генерации графиков...")
+        charts_dir, data_dir = setup_environment()
+        logger.info("Начало генерации графиков и данных...")
+        
+        salary_by_year_data = get_salary_by_year_data()
+        salary_by_city_data = get_salary_by_city_data()
+        vacancy_share_data = get_vacancy_share_by_city_data()
+        top_skills_data = get_top_skills_data()
         
         generate_salary_by_year_chart()
         generate_vacancies_by_year_chart()
@@ -673,10 +741,10 @@ def generate_all_charts():
         generate_vacancy_share_by_city_chart()
         generate_top_skills_chart()
         
-        logger.info("Все графики успешно сгенерированы!")
+        logger.info("Все графики и данные успешно сгенерированы!")
     except Exception as e:
-        logger.error(f"Критическая ошибка при генерации графиков: {str(e)}")
+        logger.error(f"Критическая ошибка при генерации графиков и данных: {str(e)}")
         raise
-    
+
 if __name__ == '__main__':
     generate_all_charts()

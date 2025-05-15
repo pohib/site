@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
+
+
 
 {% block title %}Навыки C# разработчиков{% endblock %}
 
@@ -18,6 +21,7 @@
     .skill-card {
         border-left: 4px solid #4e73df;
         transition: all 0.3s ease;
+        height: 400px;
     }
     
     .skill-card:hover {
@@ -33,6 +37,34 @@
     .skill-progress {
         height: 10px;
         border-radius: 5px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 350px;
+        width: 100%;
+    }
+    
+    .data-table {
+        width: 100% !important;
+    }
+    
+    #skillsSearch {
+        max-width: 300px;
+        transition: all 0.3s ease;
+    }
+    
+    #skillsSearch:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+    }
+    
+    .input-group-text {
+        background-color: #f8f9fa;
+    }
+    
+    .search-container {
+        margin-bottom: 20px;
     }
 </style>
 {% endblock %}
@@ -78,37 +110,47 @@
         <div class="card-header bg-primary text-white">
             <h3 class="mb-0"><i class="bi bi-list-check"></i> Полный список навыков</h3>
         </div>
-        <div class="card-body">
+            <div class="card-body">
+                <div class="search-container">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="skillsSearch" class="form-control" placeholder="Поиск по навыкам...">
+                                <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>           
             <div class="table-responsive">
                 <table class="table data-table table-hover">
                     <thead>
                         <tr>
+                            <th>#</th>
                             <th>Навык</th>
                             <th>Частота</th>
-                            <th>Изменение</th>
+                            <th>Год</th>
                             <th>Популярность</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for skill in skills %}
-                        <tr>
-                            <td>
-                                <span class="badge bg-primary skill-badge">{{ forloop.counter }}</span>
-                                {{ skill.name }}
-                            </td>
+                        <tr>                          
+                            <td>{{ skill.position }}</td>
+                            <td>{{ skill.name }}</td>
                             <td>{{ skill.count }}</td>
-                            <td class="{% if skill.change > 0 %}text-success{% else %}text-danger{% endif %}">
-                                {{ skill.change|floatformat:"1" }}%
-                                {% if skill.change > 0 %}<i class="bi bi-arrow-up"></i>{% else %}<i class="bi bi-arrow-down"></i>{% endif %}
-                            </td>
+                            <td>{{ skill.year }}</td>
                             <td>
                                 <div class="progress skill-progress">
                                     <div class="progress-bar bg-success" 
                                         role="progressbar" 
-                                        style="width: {{ skill.percentage }}%"
+                                        style="width: {{ skill.percentage|dot_format }}%"
                                         aria-valuenow="{{ skill.percentage }}" 
                                         aria-valuemin="0" 
                                         aria-valuemax="100">
+                                        {{ skill.percentage|floatformat:"-2" }}%
                                     </div>
                                 </div>
                             </td>
@@ -129,13 +171,14 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    new Chart(document.getElementById('topSkillsChart'), {
+    const topSkillsCtx = document.getElementById('topSkillsChart');
+    new Chart(topSkillsCtx, {
         type: 'bar',
         data: {
-            labels: [{% for skill in skills|slice:":20" %}"{{ skill.name }}",{% endfor %}],
+            labels: [{% for skill in top_20_skills %}"{{ skill.display_name }}",{% endfor %}],
             datasets: [{
                 label: 'Количество упоминаний',
-                data: [{% for skill in skills|slice:":20" %}{{ skill.count }},{% endfor %}],
+                data: [{% for skill in top_20_skills %}{{ skill.count }},{% endfor %}],
                 backgroundColor: 'rgba(78, 115, 223, 0.7)',
                 borderColor: 'rgba(78, 115, 223, 1)',
                 borderWidth: 1
@@ -143,10 +186,18 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             indexAxis: 'y',
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.x + ' упоминаний';
+                        }
+                    }
                 }
             },
             scales: {
@@ -155,12 +206,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     ticks: {
                         precision: 0
                     }
+                },
+                y: {
+                    ticks: {
+                        autoSkip: false
+                    }
                 }
             }
         }
     });
 
-    new Chart(document.getElementById('skillsTrendChart'), {
+    const trendCtx = document.getElementById('skillsTrendChart');
+    new Chart(trendCtx, {
         type: 'line',
         data: {
             labels: [{% for year in years %}"{{ year }}",{% endfor %}],
@@ -169,18 +226,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     label: '{{ skill.name }}',
                     data: [{% for count in skill.years %}{{ count }},{% endfor %}],
-                    borderColor: getRandomColor(),
+                    borderColor: '{{ skill.color }}',
                     backgroundColor: 'rgba(0, 0, 0, 0)',
-                    tension: 0.1
+                    borderWidth: 3,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
                 },
                 {% endfor %}
             ]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     position: 'top',
+                    labels: {
+                        boxWidth: 20,
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y + ' упоминаний';
+                        }
+                    }
                 }
             },
             scales: {
@@ -188,19 +263,51 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: true,
                     ticks: {
                         precision: 0
+                    },
+                    grid: {
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
                     }
                 }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
 
-    function getRandomColor() {
-        const colors = [
-            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
-            '#5a5c69', '#3a3b45', '#2e59d9', '#17a673', '#2c9faf'
-        ];
-        return colors[Math.floor(Math.random() * colors.length)];
-    }
+    var table = $('.data-table').DataTable({
+        order: [[1, 'asc']],
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
+        },
+        dom: '<"top"lf>rt<"bottom"ip>',
+        initComplete: function() {
+            $('#skillsSearch').on('keyup', function() {
+                table.search(this.value).draw();
+            });
+            
+            $('#clearSearch').on('click', function() {
+                $('#skillsSearch').val('');
+                table.search('').draw();
+            });
+        }
+    });
+
+    $('#skillsSearch').on('input', function() {
+        if ($(this).val().length > 0) {
+            $('#clearSearch').removeClass('d-none');
+        } else {
+            $('#clearSearch').addClass('d-none');
+        }
+    });
 });
 </script>
 {% endblock %}

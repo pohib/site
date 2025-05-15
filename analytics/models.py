@@ -61,6 +61,24 @@ class Skill(models.Model):
         verbose_name = _('Навык')
         verbose_name_plural = _('Навыки')
         ordering = ['-year', '-count']
+        indexes = [
+            models.Index(fields=['-count', 'name']),
+            models.Index(fields=['is_for_profession', '-count']),
+        ]
 
     def __str__(self):
         return _("{} ({})").format(self.name, self.year)
+    
+class AnalyticsSettings(models.Model):
+    skill_count_threshold = models.IntegerField(
+        _('Порог частоты навыков'),
+        default=50,
+        help_text=_('Навыки с частотой ниже этого значения не будут отображаться')
+    )
+    
+    class Meta:
+        verbose_name = _('настройку аналитики')
+        verbose_name_plural = _('Настройки аналитики')
+
+    def __str__(self):
+        return f"Настройки аналитики (порог: {self.skill_count_threshold})"

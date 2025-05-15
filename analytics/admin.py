@@ -1,6 +1,13 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
-from .models import SalaryByYear, SalaryByCity, Skill
+from .models import AnalyticsSettings, SalaryByYear, SalaryByCity, Skill
+
+@admin.register(AnalyticsSettings)
+class AnalyticsSettingsAdmin(admin.ModelAdmin):
+    list_display = ('skill_count_threshold',)
+    
+    def has_add_permission(self, request):
+        return not AnalyticsSettings.objects.exists()
 
 @admin.register(SalaryByYear)
 class SalaryByYearAdmin(admin.ModelAdmin):
