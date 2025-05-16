@@ -225,159 +225,177 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const topSkillsCtx = document.getElementById('topSkillsChart');
-    new Chart(topSkillsCtx, {
-        type: 'bar',
-        data: {
-            labels: [{% for skill in top_20_skills %}"{{ skill.name }}",{% endfor %}],
-            datasets: [{
-                label: 'Количество упоминаний',
-                data: [{% for skill in top_20_skills %}{{ skill.count }},{% endfor %}],
-                backgroundColor: 'rgba(78, 115, 223, 0.7)',
-                borderColor: 'rgba(78, 115, 223, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.parsed.x + ' упоминаний';
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
-                },
-                y: {
-                    ticks: {
-                        autoSkip: false
-                    }
-                }
-            }
-        }
-    });
+(function() {
+    if ($.fn.DataTable.isDataTable('.data-table')) {
+        var table = $('.data-table').DataTable();
+        table.destroy(); 
+    }
 
-    const trendCtx = document.getElementById('skillsTrendChart');
-    new Chart(trendCtx, {
-        type: 'line',
-        data: {
-            labels: [{% for year in years %}"{{ year }}",{% endfor %}],
-            datasets: [
-                {% for skill in top_5_skills %}
-                {
-                    label: '{{ skill.name }}',
-                    data: [{% for count in skill.years %}{{ count }},{% endfor %}],
-                    borderColor: '{{ skill.color }}',
-                    backgroundColor: 'rgba(0, 0, 0, 0)',
-                    borderWidth: 3,
-                    tension: 0.3,
-                    pointRadius: 5,
-                    pointHoverRadius: 7
+    function initCharts() {
+        const topSkillsCtx = document.getElementById('topSkillsChart');
+        if (topSkillsCtx && window.Chart) {
+            new Chart(topSkillsCtx, {
+                type: 'bar',
+                data: {
+                    labels: [{% for skill in top_20_skills %}"{{ skill.name }}",{% endfor %}],
+                    datasets: [{
+                        label: 'Количество упоминаний',
+                        data: [{% for skill in top_20_skills %}{{ skill.count }},{% endfor %}],
+                        backgroundColor: 'rgba(78, 115, 223, 0.7)',
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 1
+                    }]
                 },
-                {% endfor %}
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        boxWidth: 20,
-                        padding: 15,
-                        font: {
-                            size: 12
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.x + ' упоминаний';
+                                }
+                            }
                         }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + context.parsed.y + ' упоминаний';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
                     },
-                    grid: {
-                        drawBorder: false
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        },
+                        y: {
+                            ticks: { autoSkip: false }
+                        }
                     }
+                }
+            });
+        }
+
+        const trendCtx = document.getElementById('skillsTrendChart');
+        if (trendCtx && window.Chart) {
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: [{% for year in years %}"{{ year }}",{% endfor %}],
+                    datasets: [
+                        {% for skill in top_5_skills %}
+                        {
+                            label: '{{ skill.name }}',
+                            data: [{% for count in skill.years %}{{ count }},{% endfor %}],
+                            borderColor: '{{ skill.color }}',
+                            backgroundColor: 'rgba(0, 0, 0, 0)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {% endfor %}
+                    ]
                 },
-                x: {
-                    grid: {
-                        display: false
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                boxWidth: 20,
+                                padding: 15,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + ' упоминаний';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 },
+                            grid: { drawBorder: false }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
+                }
+            });
+        }
+    }
+
+    function initDataTable() {
+        if ($.fn.DataTable.isDataTable('.data-table')) {
+            $('.data-table').DataTable().destroy();
+        }
+
+        var table = $('.data-table').DataTable({
+            order: [[0, 'asc']],
+            pageLength: 25,
+            lengthMenu: [10, 25, 50, 100],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json',
+                search: "",
+                searchPlaceholder: "Поиск...",
+                lengthMenu: "Показать _MENU_ записей",
+                info: "Показано с _START_ по _END_ из _TOTAL_ записей",
+                infoEmpty: "Нет записей для отображения",
+                infoFiltered: "(отфильтровано из _MAX_ записей)",
+                paginate: {
+                    first: "Первая",
+                    last: "Последняя",
+                    next: "Следующая",
+                    previous: "Предыдущая"
                 }
             },
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            }
-        }
+            dom: '<"top"l>rt<"bottom"ip>',
+            columnDefs: [
+                { orderable: false, targets: [3] },
+                { type: "num", targets: [0, 2] }
+            ]
+        });
+
+        $('#skillsSearch').on('input', function() {
+            table.search(this.value).draw();
+        });
+
+        $('#clearSearch').on('click', function() {
+            $('#skillsSearch').val('');
+            table.search('').draw();
+        });
+
+        $('#skillsSearch').on('input', function() {
+            $('#clearSearch').toggleClass('d-none', !this.value.trim());
+        });
+    }
+
+    function initTooltips() {
+        $('[data-toggle="tooltip"]').tooltip({
+            placement: 'top',
+            trigger: 'hover'
+        });
+    }
+
+    $(window).on('load', function() {
+        initCharts();
+        initDataTable();
+        initTooltips();
     });
-
-    $(document).ready(function() {
-            var table = $('.data-table').DataTable({
-                order: [[0, 'asc']],
-                pageLength: 25,
-                lengthMenu: [10, 25, 50, 100],
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
-                },
-                dom: '<"top"lf>rt<"bottom"ip>',
-                columnDefs: [
-                    { "orderable": false, "targets": [3] }
-                ]
-            });
-
-            $('#skillsSearch').keyup(function(){
-                table.search($(this).val()).draw();
-            });
-
-            $('#clearSearch').click(function(){
-                $('#skillsSearch').val('');
-                table.search('').draw();
-            });
-
-            $('#skillsSearch').on('input', function() {
-                if ($(this).val().length > 0) {
-                    $('#clearSearch').removeClass('d-none');
-                } else {
-                    $('#clearSearch').addClass('d-none');
-                }
-            });
-    });
-
-    $('[data-toggle="tooltip"]').tooltip({
-        placement: 'top',
-        trigger: 'hover'
-    });
-});
-
+})();
 </script>
 {% endblock %}
