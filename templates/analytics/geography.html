@@ -36,7 +36,6 @@
         margin-right: 5px;
     }
     
-    /* Стили для балунов Yandex Maps */
     .ymaps-balloon {
         border-radius: 8px;
         padding: 15px;
@@ -275,11 +274,9 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endif %}
         {% endfor %}
         
-        // Добавляем метки в кластеризатор
         clusterer.add(geoObjects);
         map.geoObjects.add(clusterer);
-        
-        // Автоматически подбираем масштаб и центр карты
+
         if (geoObjects.length > 0) {
             map.setBounds(clusterer.getBounds(), {
                 checkZoomRange: true,
@@ -287,8 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
-    
-    // Инициализация DataTables
+
     $('.data-table').DataTable({
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'

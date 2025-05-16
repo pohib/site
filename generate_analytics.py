@@ -99,9 +99,9 @@ def get_salary_by_year_data():
 
 def get_salary_by_city_data():
     EXCLUDE_COUNTRIES = [
-            'австралия', 'австрия', 'азербайджан', 'албания', 'алжир', 
+        'австралия', 'австрия', 'азербайджан', 'албания', 'алжир', 
             'ангола', 'андорра', 'антигуа и барбуда', 'аргентина', 'армения',
-            'афганистан', 'багамы', 'бангладеш', 'барбадос', 'бахрейн', 'беларусь', 'белиз',
+            'афганистан', 'абхазия', 'багамы', 'бангладеш', 'барбадос', 'бахрейн', 'беларусь', 'белиз',
             'бельгия', 'бенин', 'болгария', 'боливия', 'босния и герцеговина', 'ботсвана',
             'бразилия', 'бруней', 'буркина-фасо', 'бурунди', 'бутан', 'вануату', 'ватикан',
             'великобритания', 'венгрия', 'венесуэла', 'восточный тимор', 'вьетнам', 'габон',
@@ -138,62 +138,74 @@ def get_salary_by_city_data():
             'кабо-верде', 'острова кука', 'виргинские острова', 'кюрасао', 'сент-люсия',
             'сейшельские острова', 'тринидад и тобаго', 'антигуа и барбуда', 'сент-китс и невис',
             'сан-томе и принсипи', 'сао-томе и принсипи'
-        ]
-    
+    ]
+
     data_prof = SalaryByCity.objects.filter(
         is_for_profession=True,
         average_salary__isnull=False,
         average_salary__lte=MAX_SALARY
     ).exclude(
-        city__iregex=r'^(?!.*\().*$'
-    ).exclude(
-        city__iregex='|'.join([f'^{country}$' for country in EXCLUDE_COUNTRIES])
-    ).order_by('-average_salary')[:10]
-    
-    if not data_prof:            
-        data_prof = SalaryByCity.objects.filter(
-            is_for_profession=True,
-            average_salary__isnull=False,
-            average_salary__lte=MAX_SALARY,
-            city__regex=r'^[а-яА-ЯёЁ\-]+$'
-        ).exclude(
-            city__iregex='|'.join(EXCLUDE_COUNTRIES)
-        ).order_by('-average_salary')[:10]
-    
+        city__iregex=r'^(?:{})$'.format('|'.join(EXCLUDE_COUNTRIES))
+    ).order_by('-average_salary')
+
     def clean_city_name(city):
-        if '(' in city:
-            return city.split('(')[0].strip()
-        return city
-    
-    prof_cities = [clean_city_name(item.city) for item in data_prof]
-    original_city_names = [item.city for item in data_prof]
-    
+        return city.split('(')[0].strip().lower()
+
+    city_groups = {}
+    for item in data_prof:
+        clean_city = clean_city_name(item.city)
+        if clean_city not in city_groups:
+            city_groups[clean_city] = {
+                'original_names': [item.city],
+                'salaries': [item.average_salary],
+            }
+        else:
+            city_groups[clean_city]['original_names'].append(item.city)
+            city_groups[clean_city]['salaries'].append(item.average_salary)
+
+    prof_salaries_dict = {
+        city: sum(data['salaries']) / len(data['salaries'])
+        for city, data in city_groups.items()
+    }
+
+    top_cities = sorted(
+        prof_salaries_dict.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )[:10]
+
+    original_city_names = [
+        city_groups[city]['original_names'][0]
+        for city, _ in top_cities
+    ]
+
     data_all = SalaryByCity.objects.filter(
         is_for_profession=False,
         city__in=original_city_names,
         average_salary__isnull=False,
         average_salary__lte=MAX_SALARY
-    ).order_by('-average_salary')
-    
-    all_salaries_dict = {clean_city_name(item.city): item.average_salary for item in data_all}
-    prof_salaries_dict = {clean_city_name(item.city): item.average_salary for item in data_prof}
-    
-    cities = []
-    all_salaries = []
-    csharp_salaries = []
-    
-    for city, original_name in zip(prof_cities, original_city_names):
-        if city in all_salaries_dict:
-            cities.append(city)
-            all_salaries.append(all_salaries_dict[city])
-            csharp_salaries.append(prof_salaries_dict[city])
-    
-    result = {
-        'cities': cities,
-        'all_salaries': all_salaries,
-        'csharp_salaries': csharp_salaries,
-        'original_city_names': original_city_names
+    )
+
+    all_salaries_dict = {}
+    for item in data_all:
+        clean_city = clean_city_name(item.city)
+        if clean_city not in all_salaries_dict:
+            all_salaries_dict[clean_city] = [item.average_salary]
+        else:
+            all_salaries_dict[clean_city].append(item.average_salary)
+
+    all_salaries_dict = {
+        city: sum(salaries) / len(salaries)
+        for city, salaries in all_salaries_dict.items()
     }
+
+    result = {
+        'cities': [city for city, _ in top_cities],
+        'all_salaries': [all_salaries_dict.get(city, 0) for city, _ in top_cities],
+        'csharp_salaries': [salary for _, salary in top_cities],
+        'original_city_names': original_city_names,
+    }
+
     save_data_to_json(result, 'salary_by_city.json')
     return result
 

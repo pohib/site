@@ -35,10 +35,14 @@
     }
     
     .skill-progress {
-        height: 10px;
-        border-radius: 5px;
+    min-width: 200px;
+    width: 100%;
     }
     
+    .data-table th, .data-table td {
+    padding: 12px 15px;
+    }
+
     .chart-container {
         position: relative;
         height: 350px;
@@ -65,6 +69,62 @@
     
     .search-container {
         margin-bottom: 20px;
+    }
+
+    .progress.skill-progress {
+    height: 20px;
+    border-radius: 10px;
+    background-color: #f0f3f7;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    flex-grow: 1;
+    min-width: 150px;
+    }
+
+    .progress-bar {
+    border-radius: 10px;
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+    transition: width 0.6s ease;
+    position: relative;
+    }
+
+    .progress-bar::after {
+        content: attr(aria-valuenow) "%";
+        position: absolute;
+        right: -40px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #495057;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .percentage-value {
+    min-width: 50px;
+    text-align: right;
+    font-weight: bold;
+    color: #495057;
+    }
+
+    .progress-bar.bg-success {
+        background: linear-gradient(90deg, #2ecc71, #27ae60);
+    }
+
+    .progress-bar.bg-warning {
+        background: linear-gradient(90deg, #f39c12, #e67e22);
+    }
+
+    .progress-bar.bg-info {
+        background: linear-gradient(90deg, #3498db, #2980b9);
+    }
+    
+    @media (max-width: 768px) {
+    .progress.skill-progress {
+        min-width: 100px;
+    }
+    .percentage-value {
+        min-width: 40px;
+        font-size: 0.9rem;
+    }
     }
 </style>
 {% endblock %}
@@ -128,30 +188,30 @@
                 <table class="table data-table table-hover">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Навык</th>
-                            <th>Частота</th>
-                            <th>Год</th>
-                            <th>Популярность</th>
+                            <th style="width: 5%;">#</th>
+                            <th style="width: 25%;">Навык</th>
+                            <th style="width: 20%;">Общее количество упоминаний</th>
+                            <th style="width: 20%;">Популярность</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for skill in skills %}
-                        <tr>                          
+                        <tr>
                             <td>{{ skill.position }}</td>
                             <td>{{ skill.name }}</td>
                             <td>{{ skill.count }}</td>
-                            <td>{{ skill.year }}</td>
                             <td>
-                                <div class="progress skill-progress">
-                                    <div class="progress-bar bg-success" 
-                                        role="progressbar" 
-                                        style="width: {{ skill.percentage|dot_format }}%"
-                                        aria-valuenow="{{ skill.percentage }}" 
-                                        aria-valuemin="0" 
-                                        aria-valuemax="100">
-                                        {{ skill.percentage|floatformat:"-2" }}%
+                                <div class="d-flex align-items-center">
+                                    <div class="progress skill-progress flex-grow-1 me-2">
+                                        <div class="progress-bar bg-success" 
+                                            role="progressbar" 
+                                            style="width: {{ skill.percentage|stringformat:'f' }}%"
+                                            aria-valuenow="{{ skill.percentage }}" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="100">
+                                        </div>
                                     </div>
+                                    <span class="percentage-value">{{ skill.percentage|floatformat:"-2" }}%</span>
                                 </div>
                             </td>
                         </tr>
@@ -175,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(topSkillsCtx, {
         type: 'bar',
         data: {
-            labels: [{% for skill in top_20_skills %}"{{ skill.display_name }}",{% endfor %}],
+            labels: [{% for skill in top_20_skills %}"{{ skill.name }}",{% endfor %}],
             datasets: [{
                 label: 'Количество упоминаний',
                 data: [{% for skill in top_20_skills %}{{ skill.count }},{% endfor %}],
@@ -281,33 +341,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    var table = $('.data-table').DataTable({
-        order: [[1, 'asc']],
-        pageLength: 25,
-        lengthMenu: [10, 25, 50, 100],
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
-        },
-        dom: '<"top"lf>rt<"bottom"ip>',
-        initComplete: function() {
-            $('#skillsSearch').on('keyup', function() {
-                table.search(this.value).draw();
+    $(document).ready(function() {
+            var table = $('.data-table').DataTable({
+                order: [[0, 'asc']],
+                pageLength: 25,
+                lengthMenu: [10, 25, 50, 100],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
+                },
+                dom: '<"top"lf>rt<"bottom"ip>',
+                columnDefs: [
+                    { "orderable": false, "targets": [3] }
+                ]
             });
-            
-            $('#clearSearch').on('click', function() {
+
+            $('#skillsSearch').keyup(function(){
+                table.search($(this).val()).draw();
+            });
+
+            $('#clearSearch').click(function(){
                 $('#skillsSearch').val('');
                 table.search('').draw();
             });
-        }
+
+            $('#skillsSearch').on('input', function() {
+                if ($(this).val().length > 0) {
+                    $('#clearSearch').removeClass('d-none');
+                } else {
+                    $('#clearSearch').addClass('d-none');
+                }
+            });
     });
 
-    $('#skillsSearch').on('input', function() {
-        if ($(this).val().length > 0) {
-            $('#clearSearch').removeClass('d-none');
-        } else {
-            $('#clearSearch').addClass('d-none');
-        }
+    $('[data-toggle="tooltip"]').tooltip({
+        placement: 'top',
+        trigger: 'hover'
     });
 });
+
 </script>
 {% endblock %}

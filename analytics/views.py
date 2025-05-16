@@ -193,117 +193,78 @@ def skills(request):
         
     data = load_json_data('top_skills.json')
     
-    skills_by_year = data.get('skills_by_year', {})
-    skill_totals = {}
-    
-    for year, year_skills in skills_by_year.items():
-        for skill in year_skills:
-            normalized_name = normalize_skill_name(skill['name'])
-            if normalized_name in skill_totals:
-                skill_totals[normalized_name]['count'] += skill['count']
-            else:
-                skill_totals[normalized_name] = {
-                    'display_name': skill['name'],
-                    'count': skill['count']
-                }
-    
-    top_20_skills = sorted(skill_totals.values(), key=lambda x: x['count'], reverse=True)[:20]
-
-    all_skills_db = Skill.objects.filter(is_for_profession=True, count__gte=threshold).order_by('-count')
-    
     skills_agg = {}
+    years = set()
+    
+    if 'skills_by_year' in data:
+        for year, year_skills in data['skills_by_year'].items():
+            years.add(year)
+            for skill in year_skills:
+                normalized_name = normalize_skill_name(skill['name'])
+                if normalized_name in skills_agg:
+                    skills_agg[normalized_name]['count'] += skill['count']
+                else:
+                    skills_agg[normalized_name] = {
+                        'name': skill['name'],
+                        'count': skill['count'],
+                        'years': {year: skill['count']}
+                    }
+
+    all_skills_db = Skill.objects.filter(is_for_profession=True)
+    
     for skill in all_skills_db:
-        original_name = skill.name.strip()
-        normalized_name = normalize_skill_name(original_name)
-        
+        normalized_name = normalize_skill_name(skill.name)
         if normalized_name in skills_agg:
-            if skill.count > skills_agg[normalized_name]['count']:
-                skills_agg[normalized_name] = {
-                    'name': original_name,
-                    'count': skill.count,
-                    'year': skill.year
-                }
+            skills_agg[normalized_name]['count'] += skill.count
+            if str(skill.year) in skills_agg[normalized_name]['years']:
+                skills_agg[normalized_name]['years'][str(skill.year)] += skill.count
+            else:
+                skills_agg[normalized_name]['years'][str(skill.year)] = skill.count
         else:
             skills_agg[normalized_name] = {
-                'name': original_name,
+                'name': skill.name,
                 'count': skill.count,
-                'year': skill.year
+                'years': {str(skill.year): skill.count}
             }
+            years.add(str(skill.year))
+
+    sorted_skills_all = sorted(skills_agg.values(), key=lambda x: x['count'], reverse=True)
+
+    sorted_skills_for_table = [skill for skill in sorted_skills_all if skill['count'] >= threshold]
     
-    all_skills = sorted(skills_agg.values(), key=lambda x: x['count'], reverse=True)
-    
-    max_count = max(skill['count'] for skill in all_skills) if all_skills else 1
+    max_count = max(skill['count'] for skill in sorted_skills_all) if sorted_skills_all else 1
     
     skills_for_table = []
     
-    for i, skill in enumerate(all_skills, 1):
-        percentage = float(round((skill['count'] / max_count) * 100, 2))
+    for i, skill in enumerate(sorted_skills_for_table, 1):
+        percentage = (skill['count'] / max_count) * 100
         skills_for_table.append({
+            'position': i,
             'name': skill['name'],
             'count': skill['count'],
-            'year': skill.get('year', 'N/A'),
-            'percentage': percentage,
-            'change': 0,
-            'position': i
+            'percentage': round(percentage, 2),
         })
-        
-    top_skills_for_trend = []
-    net_framework_found = False
+
+    top_20_skills = sorted_skills_all[:20]
     
-    for skill in top_20_skills[:5]:
-        top_skills_for_trend.append({
-            'display_name': skill['display_name'],
-            'count': skill['count']
-        })
-        if skill['display_name'].lower() == '.net framework':
-            net_framework_found = True
-    
-    if not net_framework_found:
-        net_framework_skill = next(
-            (skill for skill in top_20_skills if skill['display_name'].lower() == '.net framework'), 
-            {'display_name': '.NET Framework', 'count': 0}
-        )
-        if len(top_skills_for_trend) >= 5:
-            top_skills_for_trend[4] = net_framework_skill
-        else:
-            top_skills_for_trend.append(net_framework_skill)
-    
-    years = sorted(skills_by_year.keys())
-    
-    trend_data = []
+    top_5_for_trend = []
     colors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b']
     
-    for i, skill in enumerate(top_skills_for_trend):
-        skill_years = []
-        normalized_skill_name = normalize_skill_name(skill['display_name']).lower()
-        is_net_framework = normalized_skill_name == '.net framework'
+    for i, skill in enumerate(top_20_skills[:5]):
+        years_sorted = sorted(years)
+        trend_counts = []
+        for year in years_sorted:
+            trend_counts.append(skill['years'].get(year, 0))
         
-        for year in years:
-            year_skills = skills_by_year.get(year, [])
-            
-            if is_net_framework:
-                skill_count = next(
-                    (s['count'] for s in year_skills 
-                    if normalize_skill_name(s['name']).lower() in ['.net framework', '.net']), 
-                    0
-                )
-            else:
-                skill_count = next(
-                    (s['count'] for s in year_skills 
-                    if normalize_skill_name(s['name']).lower() == normalized_skill_name), 
-                    0
-                )
-            skill_years.append(skill_count)
-            
-        trend_data.append({
-            'name': skill['display_name'],
-            'years': skill_years,
+        top_5_for_trend.append({
+            'name': skill['name'],
+            'years': trend_counts,
             'color': colors[i]
         })
-        
+    
     return render(request, 'analytics/skills.html', {
         'skills': skills_for_table,
         'top_20_skills': top_20_skills,
-        'top_5_skills': trend_data,
-        'years': years
+        'top_5_skills': top_5_for_trend,
+        'years': sorted(years),
     })
