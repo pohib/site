@@ -12,8 +12,16 @@ class Page(models.Model):
                             help_text=_('Изображение для страницы'))
     created_at = models.DateTimeField(_('Дата создания'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Дата обновления'), auto_now=True)
-    is_html = models.BooleanField(default=False)
-
+    is_html = models.BooleanField(
+        default=False,
+        verbose_name='HTML страница',
+        help_text='Отметьте, если страница загружена из HTML-файла'
+    )
+    
+    def get_content(self):
+        if self.is_html:
+            return self.content
+        return self.content
     class Meta:
         verbose_name = _('страницу')
         verbose_name_plural = _('Страницы')

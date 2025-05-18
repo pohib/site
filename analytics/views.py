@@ -23,7 +23,7 @@ def load_json_data(filename):
             cache.set(cache_key, data, timeout=3600)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             data = {}
-    
+            
     return data
 
 def normalize_skill_name(name):

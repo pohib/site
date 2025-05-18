@@ -250,8 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 salary: {% if city.average_salary %}{{ city.average_salary|floatformat:"0" }}{% else %}null{% endif %},
                 share: {% if city.vacancy_share %}{{ city.vacancy_share|floatformat:"2" }}{% else %}null{% endif %}
             };
-            
-            // Создаем метку
+
             const placemark = new ymaps.Placemark(
                 [{{ city.lat }}, {{ city.lon }}],
                 {

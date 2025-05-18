@@ -1,0 +1,206 @@
+:root {
+    --primary-color: #2b579a;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+.site-header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1.5rem 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.logo {
+    height: 60px;
+    margin-right: 15px;
+}
+
+.logo-text h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.2rem;
+    font-weight: 700;
+}
+
+.logo-text p {
+    margin-bottom: 0;
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    border-radius: 8px 8px 0 0 !important;
+    padding: 1.25rem;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+    margin: 20px 0;
+}
+
+.bi {
+    margin-right: 5px;
+}
+
+.breadcrumb {
+    background-color: transparent;
+    padding: 0.75rem 0;
+}
+
+.breadcrumb-item a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.profession-description {
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.profession-description h1 {
+    color: #2c3e50;
+    margin-bottom: 1em;
+}
+
+.profession-description h2 {
+    color: #3498db;
+    margin: 1.5em 0 0.8em;
+}
+
+.profession-description h3 {
+    color: #2980b9;
+    margin: 1.2em 0 0.6em;
+}
+
+.profession-description ul, 
+.profession-description ol {
+    margin: 0.8em 0;
+    padding-left: 2em;
+}
+
+.profession-description li {
+    margin-bottom: 0.5em;
+}
+
+@media (max-width: 768px) {
+    .logo {
+        height: 40px;
+    }
+    
+    .logo-text h1 {
+        font-size: 1.4rem;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+}
+
+#skillsSearch {
+    max-width: 300px;
+    transition: all 0.3s ease;
+}
+
+#skillsSearch:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+}
+
+.skill-progress {
+    height: 20px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+}
+
+.progress.skill-progress {
+    height: 20px;
+    border-radius: 10px;
+    background-color: #f0f3f7;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    margin-top: 5px;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    position: relative;
+    overflow: visible;
+    transition: width 0.6s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.progress-bar::after {
+    content: attr(aria-valuenow) "%";
+    position: absolute;
+    right: -40px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #495057;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.progress-bar.bg-success {
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+}
+
+.progress-bar.bg-warning {
+    background: linear-gradient(90deg, #f39c12, #e67e22);
+}
+
+.progress-bar.bg-info {
+    background: linear-gradient(90deg, #3498db, #2980b9);
+}
+
+@keyframes progressAnimation {
+    from { width: 0; }
+    to { width: attr(aria-valuenow); }
+}
+
+.progress-bar {
+    animation: progressAnimation 1.5s ease-out forwards;
+}

@@ -6,7 +6,15 @@ from .models import Page, Statistic
 class PageAdmin(admin.ModelAdmin):
     list_display = ('title', 'slug')
     prepopulated_fields = {'slug': ('title',)}
+    list_filter = ('is_html',)
+    readonly_fields = ('is_html',)
+    actions = ['import_html_pages']
     
+    @admin.action(description='Импортировать HTML страницы')
+    def import_html_pages(self, request, queryset):
+        from django.core.management import call_command
+        call_command('import_pages')
+        self.message_user(request, "HTML страницы успешно импортированы")
     class Meta:
         verbose_name = _('страницу')
         verbose_name_plural = _('Страницы')
