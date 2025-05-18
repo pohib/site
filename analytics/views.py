@@ -153,8 +153,7 @@ def geography(request):
     avg_salary = sum(csharp_salaries) / len(csharp_salaries) if csharp_salaries else 0
     
     salary_by_city = []
-    for city, salary in zip(salary_data.get('cities', []), 
-                        salary_data.get('csharp_salaries', [])):
+    for city, salary in zip(salary_data.get('original_city_names', []), salary_data.get('csharp_salaries', [])):
         salary_by_city.append({
             'city': city,
             'average_salary': salary,
@@ -162,8 +161,7 @@ def geography(request):
         })
         
     vacancy_share_by_city = []
-    for city, share in zip(share_data.get('cities', []), 
-                        share_data.get('shares', [])):
+    for city, share in zip(share_data.get('cities', []), share_data.get('shares', [])):
         vacancy_share_by_city.append({
             'city': city,
             'vacancy_share': share
@@ -179,8 +177,8 @@ def geography(request):
     } for city in all_cities]
     
     return render(request, 'analytics/geography.html', {
-        'salary_by_city': salary_by_city[:10],
-        'vacancy_share_by_city': vacancy_share_by_city[:10],
+        'salary_by_city': salary_by_city,
+        'vacancy_share_by_city': vacancy_share_by_city,
         'map_data': map_data,
     })
 
