@@ -77,6 +77,17 @@ CKEDITOR_5_CONFIGS = {
             'https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/contents.css',
             '/static/css/ckeditor5-custom.css'
         ],
+        'page_builder': {
+        'toolbar': [
+            'heading', '|',
+            'bold', 'italic', 'underline', 'strikethrough', '|',
+            'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+            'alignment', '|',
+            'bulletedList', 'numberedList', '|',
+            'link', 'blockQuote', 'imageUpload', 'mediaEmbed', '|',
+            'insertTable', '|',
+            'undo', 'redo'
+        ],
         'image': {
             'toolbar': ['imageTextAlternative', '|', 'imageStyle:alignLeft',
                     'imageStyle:alignRight', 'imageStyle:alignCenter', 
@@ -88,7 +99,14 @@ CKEDITOR_5_CONFIGS = {
                 'alignRight',
                 'alignCenter',
             ]
+        },
+        'table': {
+            'contentToolbar': [
+                'tableColumn', 'tableRow', 'mergeTableCells',
+                'tableProperties', 'tableCellProperties'
+            ]
         }
+}
     }
 }
 
