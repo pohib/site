@@ -167,6 +167,13 @@
 {% endblock %}
 
 {% block content %}
+<script>
+console.log('Данные для карты:', {
+    map_data: {{ map_data|safe }},
+    salary_by_city: {{ salary_by_city|safe }},
+    vacancy_share_by_city: {{ vacancy_share_by_city|safe }}
+});
+</script>
 <section class="geography-section">
     <div class="row mb-4">
         <div class="col-md-12">
@@ -330,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     ymaps.ready(initMap);
-    
+
     function initMap() {
         const map = new ymaps.Map('map', {
             center: [55.76, 37.64],
@@ -370,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(`Запрос геокодирования: ${cityName}`);
             loadingIndicator.style.display = 'block';
             
-            ymaps.geocode(cityName, {
+            ymaps.geocode(`${cityName}, Россия`, {
                 results: 1,
                 kind: 'locality',
                 lang: 'ru_RU'
@@ -428,19 +435,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        document.getElementById('recenterBtn').addEventListener('click', function() {
-            if (geoObjects.length > 0) {
-                map.setBounds(clusterer.getBounds(), {
-                    checkZoomRange: true,
-                    zoomMargin: 50
-                });
-                console.log('Карта отцентрирована по меткам');
-            } else {
-                map.setCenter([55.76, 37.64], 3);
-                console.log('Карта отцентрирована по умолчанию');
-            }
-        });
-
         const geoObjects = [];
         const citiesToGeocode = [];
         const avgSalary = calculateAverageSalary();
@@ -452,7 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
         citiesToGeocode.push({
             name: "{{ city.name }}",
             salary: {% if city.salary %}{{ city.salary|floatformat:"0" }}{% else %}null{% endif %},
-            share: {% if city.share %}{{ city.share|floatformat:"6" }}{% else %}null{% endif %}
+            share: {% if city.share %}{{ city.share|floatformat:"10" }}{% else %}null{% endif %}
         });
         {% endif %}
         {% endfor %}
@@ -490,10 +484,10 @@ document.addEventListener('DOMContentLoaded', function() {
         {% for city in map_data %}
         {% if city.lat and city.lon %}
         createPlacemark(
-            [{{ city.lat }}, {{ city.lon }}],
+            [parseFloat("{{ city.lat }}".replace(',', '.')), parseFloat("{{ city.lon }}".replace(',', '.'))],
             "{{ city.name }}",
             {% if city.salary %}{{ city.salary|floatformat:"0" }}{% else %}null{% endif %},
-            {% if city.share %}{{ city.share|floatformat:"7" }}{% else %}null{% endif %},
+            {% if city.share %}{{ city.share }}{% else %}null{% endif %},
             avgSalary
         );
         {% endif %}
@@ -506,18 +500,32 @@ document.addEventListener('DOMContentLoaded', function() {
             return salaries.length > 0 ? salaries.reduce((a, b) => a + b, 0) / salaries.length : 0;
         }
 
-        function createPlacemark(coordinates, cityName, salary, share, avgSalary) {
+        function createPlacemark(coordinates, cityName, salary, share) {
+            if (!coordinates || coordinates.length !== 2 || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
+                console.error(`Некорректные координаты для города ${cityName}:`, coordinates);
+                return;
+            }
+
+            const numericSalary = salary ? Number(salary) : null;
+            let numericShare = share ? Number(share) : null;
+            
+            let vacancies = 1;
+            if (numericShare !== null) {
+                numericShare = parseFloat(numericShare.toFixed(4));
+                vacancies = numericShare < 0.00001 ? 1 : Math.ceil(numericShare * 100) / 100;
+            }
+
             const cityData = {
                 city: cityName,
-                salary: salary,
+                salary: numericSalary,
                 share: share,
-                vacancies: share ? Math.round(share * 10) : 0
+                vacancies: vacancies
             };
 
-            console.log(`Создание метки для ${cityName}`, cityData, `Средняя зарплата: ${avgSalary}`);
+            console.log(`Создание метки для ${cityName}`, cityData);
 
             let placemarkClass = 'custom-placemark';
-            if (cityData.salary) {
+            if (cityData.salary !== null && !isNaN(cityData.salary) && avgSalary > 0) {
                 if (cityData.salary > avgSalary * 1.2) {
                     placemarkClass += ' salary-high';
                 } else if (cityData.salary > avgSalary * 0.8) {
@@ -525,6 +533,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     placemarkClass += ' salary-low';
                 }
+            } else {
+                placemarkClass += ' salary-unknown';
             }
 
             const placemarkLayout = ymaps.templateLayoutFactory.createClass(
@@ -537,12 +547,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     balloonContentHeader: `<div class="balloon-header">${cityData.city}</div>`,
                     balloonContentBody: `
                         <div class="balloon-content">
-                            ${cityData.salary ? `
+                            ${cityData.salary !== null ? `
                             <div class="balloon-row">
                                 <span class="balloon-label">Средняя зарплата:</span>
                                 <span class="balloon-value salary">${cityData.salary.toLocaleString('ru-RU')} ₽</span>
                             </div>` : ''}
-                            ${cityData.share ? `
+                            ${cityData.share !== null ? `
                             <div class="balloon-row">
                                 <span class="balloon-label">Доля вакансий:</span>
                                 <span class="balloon-value vacancies">${cityData.share}%</span>
@@ -566,19 +576,55 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function addPlacemarksToMap() {
+            if (geoObjects.length === 0) {
+                console.warn('Нет меток для добавления на карту');
+                return;
+            }
+
             clusterer.add(geoObjects);
             map.geoObjects.add(clusterer);
 
             console.log(`Добавлено меток: ${geoObjects.length}`);
 
-            if (geoObjects.length > 0) {
-                map.setBounds(clusterer.getBounds(), {
-                    checkZoomRange: true,
-                    zoomMargin: 50
-                });
-                console.log('Границы карты установлены по меткам');
+            try {
+                const bounds = clusterer.getBounds();
+                if (bounds) {
+                    map.setBounds(bounds, {
+                        checkZoomRange: true,
+                        zoomMargin: 50
+                    });
+                    console.log('Границы карты установлены по меткам');
+                } else {
+                    console.warn('Не удалось получить границы кластеров');
+                }
+            } catch (e) {
+                console.error('Ошибка при установке границ карты:', e);
             }
         }
+
+        document.getElementById('recenterBtn').addEventListener('click', function() {
+            if (geoObjects.length > 0) {
+                try {
+                    const bounds = clusterer.getBounds();
+                    if (bounds) {
+                        map.setBounds(bounds, {
+                            checkZoomRange: true,
+                            zoomMargin: 50
+                        });
+                        console.log('Карта отцентрирована по меткам');
+                    } else {
+                        map.setCenter([55.76, 37.64], 3);
+                        console.log('Не удалось получить границы, центрируем по умолчанию');
+                    }
+                } catch (e) {
+                    console.error('Ошибка при центрировании:', e);
+                    map.setCenter([55.76, 37.64], 3);
+                }
+            } else {
+                map.setCenter([55.76, 37.64], 3);
+                console.log('Карта отцентрирована по умолчанию (нет меток)');
+            }
+        });
 
         const legend = document.createElement('div');
         legend.className = 'map-controls';
