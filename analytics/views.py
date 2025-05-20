@@ -3,9 +3,6 @@ from pathlib import Path
 from django.conf import settings
 from django.shortcuts import render
 from django.core.cache import cache
-from django.http import JsonResponse
-from django.core.paginator import Paginator
-import django.db
 from .models import SalaryByCity, Skill, AnalyticsSettings
 import logging
 
@@ -167,13 +164,18 @@ def geography(request):
             'vacancy_share': share
         })
     
-    all_cities = SalaryByCity.objects.exclude(lat__isnull=True).exclude(lon__isnull=True)
+    all_cities = SalaryByCity.objects.filter(
+        is_for_profession=True,
+        lat__isnull=False,
+        lon__isnull=False
+    ).distinct()
+    
     map_data = [{
         'name': city.city,
         'lat': city.lat,
         'lon': city.lon,
         'salary': city.average_salary if city.average_salary else 0,
-        'count': city.vacancy_share if city.vacancy_share else 0
+        'share': city.vacancy_share if city.vacancy_share else 0
     } for city in all_cities]
     
     return render(request, 'analytics/geography.html', {

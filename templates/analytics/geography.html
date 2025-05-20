@@ -6,18 +6,40 @@
 
 {% block title %}География зарплат C# разработчиков{% endblock %}
 
-{% block breadcrumbs %}
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
-        <li class="breadcrumb-item active" aria-current="page">География</li>
-    </ol>
-</nav>
-{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <style>
+    .ymaps-2-1-79-placemark-overlay {
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+
+    .custom-placemark {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6e48aa 0%, #9d50bb 100%);
+        border: 2px solid white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    .custom-placemark.salary-high {
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    }
+    
+    .custom-placemark.salary-medium {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    }
+    
+    .custom-placemark.salary-low {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+    
     .geo-card {
         transition: all 0.3s ease;
     }
@@ -44,6 +66,10 @@
         padding: 15px;
     }
     
+    .ymaps-2-1-79-balloon__content {
+        padding: 15px !important;
+    }
+
     .ymaps-balloon__content {
         margin: 0;
         padding: 0;
@@ -64,10 +90,78 @@
         color: #555;
     }
 
+    .balloon-header {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+
+    .balloon-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+    }
+    
+    .balloon-label {
+        color: #7f8c8d;
+        margin-right: 10px;
+    }
+    
+    .balloon-value {
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    
+    .balloon-value.salary {
+        color: #27ae60;
+    }
+    
+    .balloon-value.vacancies {
+        color: #3498db;
+    }
+
     .chart-container {
         position: relative;
         height: 400px;
         width: 100%;
+    }
+
+    .map-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .map-control-btn {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 5px 10px;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        font-size: 12px;
+    }
+    
+    .map-control-btn:hover {
+        background: #f5f5f5;
+    }
+    
+    .loading-indicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1000;
+        background: rgba(255,255,255,0.8);
+        padding: 10px 20px;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        display: none;
     }
 </style>
 {% endblock %}
@@ -234,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-
+    
     ymaps.ready(initMap);
     
     function initMap() {
@@ -244,55 +338,270 @@ document.addEventListener('DOMContentLoaded', function() {
             controls: ['zoomControl', 'typeSelector', 'fullscreenControl']
         });
 
+        console.log('Карта инициализирована');
+
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.className = 'loading-indicator';
+        loadingIndicator.innerHTML = '<i class="bi bi-arrow-repeat spinner"></i> Загрузка данных...';
+        document.getElementById('map').appendChild(loadingIndicator);
+
+        const controlsContainer = document.createElement('div');
+        controlsContainer.className = 'map-controls';
+        controlsContainer.innerHTML = `
+            <button class="map-control-btn" id="recenterBtn">Центрировать карту</button>
+            <button class="map-control-btn" id="geocodeBtn">Найти город</button>
+        `;
+        document.getElementById('map').appendChild(controlsContainer);
+
         const clusterer = new ymaps.Clusterer({
             preset: 'islands#invertedVioletClusterIcons',
             clusterDisableClickZoom: true,
             clusterHideIconOnBalloonOpen: false,
-            geoObjectHideIconOnBalloonOpen: false
+            geoObjectHideIconOnBalloonOpen: false,
+            clusterIconColor: '#6e48aa',
+            clusterIconContentLayout: ymaps.templateLayoutFactory.createClass(
+                '<div style="color: white; font-weight: bold; font-size: 14px;">$[properties.geoObjects.length]</div>'
+            )
+        });
+
+        console.log('Кластеризатор создан');
+
+        function geocodeCity(cityName, callback) {
+            console.log(`Запрос геокодирования: ${cityName}`);
+            loadingIndicator.style.display = 'block';
+            
+            ymaps.geocode(cityName, {
+                results: 1,
+                kind: 'locality',
+                lang: 'ru_RU'
+            }).then(function(res) {
+                const firstGeoObject = res.geoObjects.get(0);
+                if (firstGeoObject) {
+                    const coordinates = firstGeoObject.geometry.getCoordinates();
+                    const bounds = firstGeoObject.properties.get('boundedBy');
+                    const address = firstGeoObject.getAddressLine();
+                    
+                    console.log(`Город: ${cityName}, Адрес: ${address}, Координаты: ${coordinates}`);
+                    
+                    callback({
+                        success: true,
+                        coordinates: coordinates,
+                        bounds: bounds,
+                        address: address
+                    });
+                } else {
+                    console.warn(`Город не найден: ${cityName}`);
+                    callback({ success: false, message: 'Город не найден' });
+                }
+            }).catch(function(err) {
+                console.error(`Ошибка геокодирования: ${err}`);
+                callback({ success: false, message: 'Ошибка геокодирования: ' + err });
+            }).finally(function() {
+                loadingIndicator.style.display = 'none';
+            });
+        }
+
+        document.getElementById('geocodeBtn').addEventListener('click', function() {
+            const cityName = prompt('Введите название города:');
+            if (cityName) {
+                geocodeCity(cityName, function(result) {
+                    if (result.success) {
+                        map.setCenter(result.coordinates, 10, {
+                            checkZoomRange: true
+                        });
+                        const placemark = new ymaps.Placemark(
+                            result.coordinates,
+                            {
+                                balloonContent: result.address,
+                                hintContent: result.address
+                            },
+                            {
+                                preset: 'islands#blueDotIcon'
+                            }
+                        );
+                        map.geoObjects.add(placemark);
+                        console.log(`Метка добавлена для ${cityName}`);
+                    } else {
+                        alert(result.message);
+                    }
+                });
+            }
+        });
+
+        document.getElementById('recenterBtn').addEventListener('click', function() {
+            if (geoObjects.length > 0) {
+                map.setBounds(clusterer.getBounds(), {
+                    checkZoomRange: true,
+                    zoomMargin: 50
+                });
+                console.log('Карта отцентрирована по меткам');
+            } else {
+                map.setCenter([55.76, 37.64], 3);
+                console.log('Карта отцентрирована по умолчанию');
+            }
         });
 
         const geoObjects = [];
+        const citiesToGeocode = [];
+        const avgSalary = calculateAverageSalary();
+
+        console.log('Средняя зарплата:', avgSalary);
+
+        {% for city in map_data %}
+        {% if not city.lat or not city.lon %}
+        citiesToGeocode.push({
+            name: "{{ city.name }}",
+            salary: {% if city.salary %}{{ city.salary|floatformat:"0" }}{% else %}null{% endif %},
+            share: {% if city.share %}{{ city.share|floatformat:"6" }}{% else %}null{% endif %}
+        });
+        {% endif %}
+        {% endfor %}
+
+        if (citiesToGeocode.length > 0) {
+            console.log(`Городов для геокодирования: ${citiesToGeocode.length}`);
+            loadingIndicator.style.display = 'block';
+            
+            let geocodedCount = 0;
+            citiesToGeocode.forEach(function(city) {
+                geocodeCity(city.name, function(result) {
+                    if (result.success) {
+                        console.log(`Успешно геокодирован: ${city.name}`, result.coordinates);
+                        createPlacemark(
+                            result.coordinates,
+                            city.name,
+                            city.salary,
+                            city.share,
+                            avgSalary
+                        );
+                    } else {
+                        console.warn(`Не удалось геокодировать: ${city.name}`);
+                    }
+                    
+                    geocodedCount++;
+                    if (geocodedCount === citiesToGeocode.length) {
+                        loadingIndicator.style.display = 'none';
+                        addPlacemarksToMap();
+                        console.log('Все города геокодированы');
+                    }
+                });
+            });
+        }
 
         {% for city in map_data %}
         {% if city.lat and city.lon %}
-        (function() {
+        createPlacemark(
+            [{{ city.lat }}, {{ city.lon }}],
+            "{{ city.name }}",
+            {% if city.salary %}{{ city.salary|floatformat:"0" }}{% else %}null{% endif %},
+            {% if city.share %}{{ city.share|floatformat:"7" }}{% else %}null{% endif %},
+            avgSalary
+        );
+        {% endif %}
+        {% endfor %}
+
+        addPlacemarksToMap();
+
+        function calculateAverageSalary() {
+            const salaries = [{% for city in map_data %}{% if city.salary %}{{ city.salary|floatformat:"0" }},{% endif %}{% endfor %}];
+            return salaries.length > 0 ? salaries.reduce((a, b) => a + b, 0) / salaries.length : 0;
+        }
+
+        function createPlacemark(coordinates, cityName, salary, share, avgSalary) {
             const cityData = {
-                city: "{{ city.city }}",
-                salary: {% if city.average_salary %}{{ city.average_salary|floatformat:"0" }}{% else %}null{% endif %},
-                share: {% if city.vacancy_share %}{{ city.vacancy_share|floatformat:"2" }}{% else %}null{% endif %}
+                city: cityName,
+                salary: salary,
+                share: share,
+                vacancies: share ? Math.round(share * 10) : 0
             };
 
+            console.log(`Создание метки для ${cityName}`, cityData, `Средняя зарплата: ${avgSalary}`);
+
+            let placemarkClass = 'custom-placemark';
+            if (cityData.salary) {
+                if (cityData.salary > avgSalary * 1.2) {
+                    placemarkClass += ' salary-high';
+                } else if (cityData.salary > avgSalary * 0.8) {
+                    placemarkClass += ' salary-medium';
+                } else {
+                    placemarkClass += ' salary-low';
+                }
+            }
+
+            const placemarkLayout = ymaps.templateLayoutFactory.createClass(
+                `<div class="${placemarkClass}">${cityData.vacancies}</div>`
+            );
+
             const placemark = new ymaps.Placemark(
-                [{{ city.lat }}, {{ city.lon }}],
+                coordinates,
                 {
-                    balloonContentHeader: `<div class="balloon-title">${cityData.city}</div>`,
+                    balloonContentHeader: `<div class="balloon-header">${cityData.city}</div>`,
                     balloonContentBody: `
                         <div class="balloon-content">
-                            ${cityData.salary ? `<p class="balloon-text">Зарплата: ${cityData.salary.toLocaleString('ru-RU')} ₽</p>` : ''}
-                            ${cityData.share ? `<p class="balloon-text">Доля вакансий: ${cityData.share}%</p>` : ''}
+                            ${cityData.salary ? `
+                            <div class="balloon-row">
+                                <span class="balloon-label">Средняя зарплата:</span>
+                                <span class="balloon-value salary">${cityData.salary.toLocaleString('ru-RU')} ₽</span>
+                            </div>` : ''}
+                            ${cityData.share ? `
+                            <div class="balloon-row">
+                                <span class="balloon-label">Доля вакансий:</span>
+                                <span class="balloon-value vacancies">${cityData.share}%</span>
+                            </div>` : ''}
                         </div>
                     `,
                     hintContent: cityData.city
                 },
                 {
-                    preset: 'islands#violetIcon'
+                    iconLayout: placemarkLayout,
+                    iconShape: {
+                        type: 'Circle',
+                        coordinates: [0, 0],
+                        radius: 16
+                    },
+                    hideIconOnBalloonOpen: false
                 }
             );
             
             geoObjects.push(placemark);
-        })();
-        {% endif %}
-        {% endfor %}
-        
-        clusterer.add(geoObjects);
-        map.geoObjects.add(clusterer);
-
-        if (geoObjects.length > 0) {
-            map.setBounds(clusterer.getBounds(), {
-                checkZoomRange: true,
-                zoomMargin: 50
-            });
         }
+
+        function addPlacemarksToMap() {
+            clusterer.add(geoObjects);
+            map.geoObjects.add(clusterer);
+
+            console.log(`Добавлено меток: ${geoObjects.length}`);
+
+            if (geoObjects.length > 0) {
+                map.setBounds(clusterer.getBounds(), {
+                    checkZoomRange: true,
+                    zoomMargin: 50
+                });
+                console.log('Границы карты установлены по меткам');
+            }
+        }
+
+        const legend = document.createElement('div');
+        legend.className = 'map-controls';
+        legend.style.bottom = '10px';
+        legend.style.top = 'auto';
+        legend.innerHTML = `
+            <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                <div style="margin-bottom: 5px;"><strong>Легенда:</strong></div>
+                <div style="display: flex; align-items: center; margin-bottom: 3px;">
+                    <div style="width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); margin-right: 5px; border: 1px solid white;"></div>
+                    <span>Высокие зарплаты</span>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 3px;">
+                    <div style="width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); margin-right: 5px; border: 1px solid white;"></div>
+                    <span>Средние зарплаты</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); margin-right: 5px; border: 1px solid white;"></div>
+                    <span>Низкие зарплаты</span>
+                </div>
+            </div>
+        `;
+        document.getElementById('map').appendChild(legend);
     }
 
     $('.data-table').DataTable({
@@ -306,9 +615,5 @@ document.addEventListener('DOMContentLoaded', function() {
         order: []
     });
 });
-</script>
-
-<script>
-console.log('Vacancy shares:', [{% for city in vacancy_share_by_city %}{{ city.vacancy_share }},{% endfor %}]);
 </script>
 {% endblock %}
