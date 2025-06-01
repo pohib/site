@@ -5,6 +5,12 @@ from django.shortcuts import render
 from django.core.cache import cache
 from .models import SalaryByCity, Skill, AnalyticsSettings
 import logging
+from datetime import datetime, timedelta
+import requests
+import dateutil.parser
+from django.utils.timezone import make_aware
+from django.utils import timezone
+
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +110,8 @@ def general_stats(request):
 
 def demand(request):
     data = load_json_data('salary_by_year.json')
-    
+    stats = get_vacancies()
+    current_year = datetime.now().year
     salary_data = []
     for i in range(len(data.get('years', []))):
         year_data = {
@@ -123,7 +130,6 @@ def demand(request):
         else:
             year_data['change'] = 0
             
-            
         if year_data['vacancy_count'] > 0:
             year_data['profession_share'] = (
                 year_data['profession_vacancy_count'] / year_data['vacancy_count']
@@ -132,14 +138,18 @@ def demand(request):
             year_data['profession_share'] = 0
             
         salary_data.append(year_data)
-
+        
+        logger.debug(f"Current year stats: {stats}")
+        
     return render(request, 'analytics/demand.html', {
         'salary_data': salary_data,
         'vacancy_data': [{
             'year': item['year'],
             'count': item['profession_vacancy_count'],
             'share': item['profession_share']
-        } for item in salary_data]
+        } for item in salary_data],
+        'current_year_stats': stats,
+        'current_year' : current_year
     })
 
 def geography(request):
@@ -268,3 +278,99 @@ def skills(request):
         'top_5_skills': top_5_for_trend,
         'years': sorted(years),
     })
+    
+    
+def get_vacancies():
+    cache_key = "csharp_vacancies_last_12_months"
+    cached_count = cache.get(cache_key)
+    
+    if cached_count is not None:
+        return cached_count
+    
+    try:
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=365)
+        
+        params = {
+            "text": "C# OR .NET",
+            "specialization": 1,
+            "date_from": start_date.strftime('%Y-%m-%d'),
+            "date_to": end_date.strftime('%Y-%m-%d'),
+            "per_page": 100,
+            "professional_role": 96,
+            "search_field": "name",
+        }
+        
+        response = requests.get("https://api.hh.ru/vacancies", params=params)
+        response.raise_for_status()
+        
+        data = response.json()
+        vacancies = data.get('items', [])
+        
+        salaries = []
+        for vacancy in vacancies:
+            salary = vacancy.get('salary')
+            if salary:
+                salary_rub = convert_salary(
+                    salary.get('from') or salary.get('to'),
+                    salary.get('currency'),
+                    dateutil.parser.parse(vacancy.get('published_at')))
+                if salary_rub:
+                    salaries.append(salary_rub)
+        
+        if salaries:
+            avg_salary = sum(salaries) / len(salaries)
+            stats = {
+                'avg_salary': round(avg_salary),
+                'vacancy_count': data.get('found', 0)
+            }
+        else:
+            stats = {
+                'avg_salary': None,
+                'vacancy_count': data.get('found', 0)
+            }
+        
+        cache.set(cache_key, stats, 60 * 60 * 24)
+        
+        return stats
+        
+    except requests.RequestException as e:
+        logger.error(f"Ошибка при запросе к API hh.ru: {str(e)}")
+        return {'avg_salary': None, 'vacancy_count': None}
+    
+    
+def convert_salary(salary, currency, published_at):
+    if not salary or not currency:
+        return None
+        
+    try:
+        if isinstance(published_at, str):
+            published_at = dateutil.parser.parse(published_at)
+        
+        if timezone.is_naive(published_at):
+            published_at = make_aware(published_at)
+        
+        currency = currency.upper().replace('RUR', 'RUB')
+        
+        if currency == 'RUB':
+            return float(salary)
+        
+        CURRENCY_RATES = {
+            'USD': 79.62,
+            'EUR': 90.9,
+            'KZT': 0.16,
+            'UAH': 1.91,
+            'BYN': 26.6,
+            'GBP': 107.45
+        }
+        
+        rate = CURRENCY_RATES.get(currency)
+        if not rate:
+            logger.debug(f"Конвертация: неизвестная валюта. currency={currency}")
+            return None
+            
+        return round(float(salary) * rate, 2)
+        
+    except (ValueError, TypeError) as e:
+        logger.error(f"Ошибка конвертации зарплаты: {str(e)}")
+        return None

@@ -163,6 +163,38 @@
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         display: none;
     }
+
+    .balloon-value.salary.salary-high 
+    {
+        color: #27ae60;
+    }
+
+    .balloon-value.salary.salary-medium 
+    {
+        color: #3498db;
+    }
+
+    .balloon-value.salary.salary-low 
+    {
+        color: #e74c3c;
+    }
+
+    .balloon-value.share {
+        color: #9d50bb;
+    }
+
+    .balloon-value.share-high {
+        color: #9d50bb;
+    }
+
+    .balloon-value.share-medium {
+        color: #6e48aa;
+    }
+
+    .balloon-value.share-low {
+        color: #4b3b71;
+    }
+
 </style>
 {% endblock %}
 
@@ -377,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(`Запрос геокодирования: ${cityName}`);
             loadingIndicator.style.display = 'block';
             
-            ymaps.geocode(`${cityName}, Россия`, {
+            ymaps.geocode({cityName}, {
                 results: 1,
                 kind: 'locality',
                 lang: 'ru_RU'
@@ -446,7 +478,7 @@ document.addEventListener('DOMContentLoaded', function() {
         citiesToGeocode.push({
             name: "{{ city.name }}",
             salary: {% if city.salary %}{{ city.salary|floatformat:"0" }}{% else %}null{% endif %},
-            share: {% if city.share %}{{ city.share|floatformat:"10" }}{% else %}null{% endif %}
+            share: {% if city.share %}{{ city.share|stringformat:"f" }}{% else %}null{% endif %}
         });
         {% endif %}
         {% endfor %}
@@ -487,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
             [parseFloat("{{ city.lat }}".replace(',', '.')), parseFloat("{{ city.lon }}".replace(',', '.'))],
             "{{ city.name }}",
             {% if city.salary %}{{ city.salary|floatformat:"0" }}{% else %}null{% endif %},
-            {% if city.share %}{{ city.share }}{% else %}null{% endif %},
+            {% if city.share %}{{ city.share|stringformat:"f" }}{% else %}null{% endif %},
             avgSalary
         );
         {% endif %}
@@ -507,18 +539,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const numericSalary = salary ? Number(salary) : null;
-            let numericShare = share ? Number(share) : null;
+            let numericShare = (share !== null && share !== undefined) ? Number(share) : null;
             
             let vacancies = 1;
             if (numericShare !== null) {
-                numericShare = parseFloat(numericShare.toFixed(4));
-                vacancies = numericShare < 0.00001 ? 1 : Math.ceil(numericShare * 100) / 100;
+                numericShare = parseFloat(numericShare.toFixed(10));
+                vacancies = 1;
             }
 
             const cityData = {
                 city: cityName,
                 salary: numericSalary,
-                share: share,
+                share: numericShare,
                 vacancies: vacancies
             };
 
@@ -537,6 +569,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 placemarkClass += ' salary-unknown';
             }
 
+            let salaryClass = '';
+            if (cityData.salary !== null && !isNaN(cityData.salary)) 
+            {
+                if (cityData.salary > avgSalary * 1.2) 
+                {
+                    salaryClass = 'salary-high';
+                } 
+                else if (cityData.salary > avgSalary * 0.8) 
+                {
+                    salaryClass = 'salary-medium';
+                } 
+                else 
+                {
+                    salaryClass = 'salary-low';
+                }
+            }
+
             const placemarkLayout = ymaps.templateLayoutFactory.createClass(
                 `<div class="${placemarkClass}">${cityData.vacancies}</div>`
             );
@@ -550,12 +599,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${cityData.salary !== null ? `
                             <div class="balloon-row">
                                 <span class="balloon-label">Средняя зарплата:</span>
-                                <span class="balloon-value salary">${cityData.salary.toLocaleString('ru-RU')} ₽</span>
+                                <span class="balloon-value salary ${salaryClass}">${cityData.salary.toLocaleString('ru-RU')} ₽</span>
                             </div>` : ''}
                             ${cityData.share !== null ? `
                             <div class="balloon-row">
                                 <span class="balloon-label">Доля вакансий:</span>
-                                <span class="balloon-value vacancies">${cityData.share}%</span>
+                                <span class="balloon-value share">${cityData.share.toFixed(6)}%</span>
                             </div>` : ''}
                         </div>
                     `,

@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block title %}Востребованность C# разработчиков{% endblock %}
 
 {% block breadcrumbs %}
@@ -47,8 +46,14 @@
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <h5 class="card-title">Средняя зарплата</h5>
-                    <p class="card-text display-6">{{ avg_salary|floatformat:"0" }} ₽</p>
-                    <p class="text-muted">по данным за {{ current_year }} год</p>
+                    <p class="card-text display-6">
+                    {% if current_year_stats.avg_salary %}
+                        {{ current_year_stats.avg_salary }} ₽
+                    {% else %}
+                        Н/Д
+                    {% endif %}
+                    </p>
+                    <p class="text-muted">за {{current_year}} год</p>
                 </div>
             </div>
         </div>
@@ -56,7 +61,13 @@
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <h5 class="card-title">Количество вакансий</h5>
-                    <p class="card-text display-6">{{ vacancy_count }}</p>
+                    <p class="card-text display-6">
+                        {% if current_year_stats.vacancy_count %}
+                            {{ current_year_stats.vacancy_count }}
+                        {% else %}
+                            Н/Д
+                        {% endif %}
+                    </p>
                     <p class="text-muted">за последние 12 месяцев</p>
                 </div>
             </div>
