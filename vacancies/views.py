@@ -18,7 +18,7 @@ MAX_SALARY = 10_000_000
 
 def is_primary_csharp_vacancy(vacancy_name, description):
     name_pattern = re.compile(r'C#|\.NET|c\s*sharp', re.IGNORECASE)
-    desc_pattern = re.compile(r'(требован(ия|ий)|требуется|ищем|ищется|нужен).*?(C#|\.NET|c\s*sharp)', re.IGNORECASE)
+    desc_pattern = re.compile(r'(требован(ия|ий)|требуется|ищем|ищется|нужен|приглашаем).*?(C#|\.NET|c\s*sharp)', re.IGNORECASE)
     
     if not name_pattern.search(vacancy_name):
         return False
@@ -56,6 +56,8 @@ def latest_vacancies(request):
                 'vacancies': [],
                 'error': "На данный момент нет свежих вакансий."
             })
+            
+        logger.info(f"Всего вакансий получено из API: {len(vacancies_data)}")
         
         vacancies = []
         for vacancy_data in vacancies_data:
@@ -128,9 +130,7 @@ def latest_vacancies(request):
                     company_logo=logo_url
                 )
                 vacancies.append(vacancy)
-                
-                if len(vacancies) >= 10:
-                    break
+
 
             except (requests.RequestException, KeyError, AttributeError) as e:
                 logger.error(f"Error processing vacancy {vacancy_data.get('id')}: {str(e)}", exc_info=True)
@@ -141,15 +141,15 @@ def latest_vacancies(request):
             
         Vacancy.objects.exclude(id__in=[v.id for v in vacancies]).delete()
 
-        paginator = Paginator(vacancies, per_page)
-        page_obj = paginator.get_page(page)
-
         if sort_by == 'salary':
             reverse_order = order == 'desc'
             vacancies.sort(key=lambda x: x.salary_value or 0, reverse=reverse_order)
         elif sort_by == 'city':
             reverse_order = order == 'desc'
             vacancies.sort(key=lambda x: x.region or '', reverse=reverse_order)
+            
+        paginator = Paginator(vacancies, per_page)
+        page_obj = paginator.get_page(page)
         
         all_cities = list(set(v.region for v in Vacancy.objects.all() if v.region))
         

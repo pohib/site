@@ -113,6 +113,13 @@ def demand(request):
     stats = get_vacancies()
     current_year = datetime.now().year
     salary_data = []
+    salary_growth = 0
+    
+    if len(data.get('avg_salaries', [])) >= 3:
+        salaries = data['avg_salaries'][-3:]
+        if salaries[0] > 0:
+            salary_growth = ((salaries[-1] - salaries[0]) / salaries[0]) * 100
+    
     for i in range(len(data.get('years', []))):
         year_data = {
             'year': data['years'][i],
@@ -149,7 +156,8 @@ def demand(request):
             'share': item['profession_share']
         } for item in salary_data],
         'current_year_stats': stats,
-        'current_year' : current_year
+        'current_year' : current_year,
+        'salary_growth': salary_growth
     })
 
 def geography(request):
