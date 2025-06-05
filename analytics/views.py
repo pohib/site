@@ -3,7 +3,7 @@ from pathlib import Path
 from django.conf import settings
 from django.shortcuts import render
 from django.core.cache import cache
-from .models import SalaryByCity, Skill, AnalyticsSettings
+from .models import SalaryByCity, Skill, AnalyticsSettings, ChartSettings
 import logging
 from datetime import datetime, timedelta
 import requests
@@ -114,6 +114,7 @@ def demand(request):
     current_year = datetime.now().year
     salary_data = []
     salary_growth = 0
+    chart_settings = ChartSettings.objects.filter(chart_type='demand').first()
     
     if len(data.get('avg_salaries', [])) >= 3:
         salaries = data['avg_salaries'][-3:]
@@ -148,6 +149,8 @@ def demand(request):
         
         logger.debug(f"Current year stats: {stats}")
         
+        
+        
     return render(request, 'analytics/demand.html', {
         'salary_data': salary_data,
         'vacancy_data': [{
@@ -157,13 +160,14 @@ def demand(request):
         } for item in salary_data],
         'current_year_stats': stats,
         'current_year' : current_year,
-        'salary_growth': salary_growth
+        'salary_growth': salary_growth,
+        'chart_settings': chart_settings
     })
 
 def geography(request):
     salary_data = load_json_data('salary_by_city.json')
     share_data = load_json_data('vacancy_share_by_city.json')
-    
+    chart_settings = ChartSettings.objects.filter(chart_type='geography').first()
     csharp_salaries = salary_data.get('csharp_salaries', [])
     avg_salary = sum(csharp_salaries) / len(csharp_salaries) if csharp_salaries else 0
     
@@ -200,6 +204,7 @@ def geography(request):
         'salary_by_city': salary_by_city,
         'vacancy_share_by_city': vacancy_share_by_city,
         'map_data': map_data,
+        'chart_settings': chart_settings
     })
 
 def skills(request):
@@ -213,6 +218,8 @@ def skills(request):
     
     skills_agg = {}
     years = set()
+    
+    chart_settings = ChartSettings.objects.filter(chart_type='skills').first()
     
     if 'skills_by_year' in data:
         for year, year_skills in data['skills_by_year'].items():
@@ -285,6 +292,7 @@ def skills(request):
         'top_20_skills': top_20_skills,
         'top_5_skills': top_5_for_trend,
         'years': sorted(years),
+        'chart_settings': chart_settings
     })
     
     
@@ -305,7 +313,6 @@ def get_vacancies():
             "date_from": start_date.strftime('%Y-%m-%d'),
             "date_to": end_date.strftime('%Y-%m-%d'),
             "per_page": 100,
-            "professional_role": 96,
             "search_field": "name",
         }
         

@@ -1,6 +1,35 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 
+def validate_width(value):
+    if value <= 0:
+        raise ValidationError('Ширина должна быть положительным числом')
+    
+def validate_height(value):
+    if value <= 0:
+        raise ValidationError('Высота должна быть положительным числом')
+class ChartSettings(models.Model):
+    name = models.CharField('Название настройки', max_length=100, unique=True)
+    desktop_height = models.PositiveIntegerField('Высота на пк версии (px)', validators=[validate_height], default=500)
+    mobile_height = models.PositiveIntegerField('Высота на мобильных (px)', validators=[validate_height], default=300)
+    maintain_aspect_ratio = models.BooleanField('Сохранять пропорции', default=False)
+    desktop_width = models.PositiveIntegerField('Ширина на пк версии (px или %)', default=100, validators=[validate_width], help_text="Используйте число от 1 до 100 для процентов или больше для пикселей")                                      
+    mobile_width = models.PositiveIntegerField('Ширина на мобильных (px или %)', default=100, validators=[validate_width], help_text="Используйте число от 1 до 100 для процентов или больше для пикселей")
+    
+    CHART_TYPES = (
+        ('demand', 'Графики востребованности'),
+        ('geography', 'Графики географии'),
+        ('skills', 'Графики навыков'),
+    )
+    chart_type = models.CharField('Тип графика', max_length=20, choices=CHART_TYPES, default='demand')
+    class Meta:
+        verbose_name = 'Настройка графиков'
+        verbose_name_plural = 'Настройки графиков'
+        
+    def __str__(self):
+        return self.name
+    
 class SalaryByYear(models.Model):
     year = models.IntegerField(_('Год'), help_text=_('Год сбора статистики'))
     average_salary = models.FloatField(_('Средняя зарплата'), help_text=_('Средняя зарплата в рублях'))

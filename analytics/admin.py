@@ -31,3 +31,27 @@ class SkillAdmin(admin.ModelAdmin):
     list_filter = ('year', 'is_for_profession')
     ordering = ('-year', '-count')
     search_fields = ('name',)
+    
+    from django.contrib import admin
+from .models import ChartSettings
+
+@admin.register(ChartSettings)
+class ChartSettingsAdmin(admin.ModelAdmin):
+    list_display = ('name', 'chart_type', 'desktop_height', 'mobile_height', 
+                'desktop_width', 'mobile_width', 'maintain_aspect_ratio')
+    list_editable = ('desktop_height', 'mobile_height', 'desktop_width', 
+                    'mobile_width', 'maintain_aspect_ratio')
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'chart_type')
+        }),
+        ('Размеры для пк версии', {
+            'fields': ('desktop_height', 'desktop_width')
+        }),
+        ('Размеры для мобильных', {
+            'fields': ('mobile_height', 'mobile_width')
+        }),
+        ('Другие настройки', {
+            'fields': ('maintain_aspect_ratio',)
+        }),
+    )

@@ -65,12 +65,34 @@
         }
 
         .main-content {
-            margin-left: 60px;
             transition: margin-left 0.3s ease;
         }
 
-        .sidebar:hover ~ .main-content {
-            margin-left: 250px;
+        @media (min-width: 992px) {
+            .sidebar {
+                display: block;
+            }
+            .main-content {
+                margin-left: 60px;
+            }
+            .sidebar:hover ~ .main-content {
+                margin-left: 250px;
+            }
+            .navbar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .sidebar {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .navbar {
+                display: block;
+            }
         }
     </style>
     {% block extra_css %}{% endblock %}

@@ -195,6 +195,24 @@
         color: #4b3b71;
     }
 
+    .chart-container {
+            height: {% if chart_settings %}{{ chart_settings.mobile_height }}px{% else %}300px{% endif %};
+            width: {% if chart_settings %}
+                {% if chart_settings.mobile_width <= 100 %}{{ chart_settings.mobile_width }}%{% else %}{{ chart_settings.mobile_width }}px{% endif %}
+            {% else %}100%{% endif %};
+            
+            position: relative;
+            margin: 0 auto;
+        }
+        
+        @media (min-width: 992px) {
+            .chart-container {
+                height: {% if chart_settings %}{{ chart_settings.desktop_height }}px{% else %}500px{% endif %};
+                width: {% if chart_settings %}
+                    {% if chart_settings.desktop_width <= 100 %}{{ chart_settings.desktop_width }}%{% else %}{{ chart_settings.desktop_width }}px{% endif %}
+                {% else %}100%{% endif %};
+            }
+        }
 </style>
 {% endblock %}
 
@@ -317,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: {% if chart_settings %}{{ chart_settings.maintain_aspect_ratio|yesno:"true,false" }}{% else %}false{% endif %},
             plugins: {
                 legend: {
                     display: false
@@ -353,6 +371,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: {% if chart_settings %}{{ chart_settings.maintain_aspect_ratio|yesno:"true,false" }}{% else %}false{% endif %},
             plugins: {
                 legend: {
                     position: 'right',

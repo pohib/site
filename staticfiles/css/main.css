@@ -137,6 +137,20 @@ body {
     }
 }
 
+@media (min-width: 992px) {
+    .chart-container {
+        height: 500px;
+        min-height: 400px;
+    }
+}
+
+
+@media (max-width: 991.98px) {
+    .chart-container {
+        height: 300px;
+    }
+}
+
 #skillsSearch {
     max-width: 300px;
     transition: all 0.3s ease;

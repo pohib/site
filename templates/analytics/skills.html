@@ -118,6 +118,25 @@
         font-size: 0.9rem;
     }
     }
+
+    .chart-container {
+        height: {% if chart_settings %}{{ chart_settings.mobile_height }}px{% else %}300px{% endif %};
+        width: {% if chart_settings %}
+            {% if chart_settings.mobile_width <= 100 %}{{ chart_settings.mobile_width }}%{% else %}{{ chart_settings.mobile_width }}px{% endif %}
+        {% else %}100%{% endif %};
+        
+        position: relative;
+        margin: 0 auto;
+    }
+    
+    @media (min-width: 992px) {
+        .chart-container {
+            height: {% if chart_settings %}{{ chart_settings.desktop_height }}px{% else %}500px{% endif %};
+            width: {% if chart_settings %}
+                {% if chart_settings.desktop_width <= 100 %}{{ chart_settings.desktop_width }}%{% else %}{{ chart_settings.desktop_width }}px{% endif %}
+            {% else %}100%{% endif %};
+        }
+    }
 </style>
 {% endblock %}
 
