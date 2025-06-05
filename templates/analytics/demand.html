@@ -176,8 +176,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
@@ -207,7 +205,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const salaryCtx = document.getElementById('salaryChart').getContext('2d');
     new Chart(salaryCtx, {
         type: 'line',
-        data: salaryData,
+        data: {
+        ...salaryData,
+        datasets: salaryData.datasets.map(dataset => ({
+            ...dataset,
+            pointRadius: 5,
+            pointHoverRadius: 8,
+            pointHitRadius: 10
+        }))
+        },
         options: {
             responsive: true,
             maintainAspectRatio: {% if chart_settings %}{{ chart_settings.maintain_aspect_ratio|yesno:"true,false" }}{% else %}false{% endif %},

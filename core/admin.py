@@ -4,8 +4,10 @@ from .models import Page, Statistic
 
 @admin.register(Page)
 class PageAdmin(admin.ModelAdmin):
-    list_display = ('title', 'slug')
+    list_display = ('title', 'slug', 'show_in_menu', 'menu_icon')
+    list_editable = ('show_in_menu', 'menu_icon')
     prepopulated_fields = {'slug': ('title',)}
+    search_fields = ('title',)
     list_filter = ('is_html',)
     readonly_fields = ('is_html',)
     actions = ['import_html_pages']

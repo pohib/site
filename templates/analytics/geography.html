@@ -314,8 +314,6 @@ console.log('Данные для карты:', {
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://api-maps.yandex.ru/2.1/?apikey=25e17625-2184-4bea-bd71-15e9f532b772&lang=ru_RU" type="text/javascript"></script>
 
@@ -718,16 +716,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('map').appendChild(legend);
     }
 
-    $('.data-table').DataTable({
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
-        },
-        searching: false,
-        lengthChange: false,
-        info: false,
-        paging: false,
-        order: []
-    });
 });
 </script>
 {% endblock %}

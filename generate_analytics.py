@@ -32,7 +32,7 @@ CHART_STYLES = {
         'text': '#2c3e50',
         'grid': '#ecf0f1'
     },
-    'figure_size': (14, 8),
+    'figure_size': (16, 8),
     'dpi': 200,
     'font': {
         'family': 'Arial',
@@ -40,6 +40,26 @@ CHART_STYLES = {
         'labels': 14,
         'ticks': 12,
         'legend': 12
+    },
+    'padding': {
+        'default': {
+            'left': 0.1,
+            'right': 0.9,
+            'top': 0.95,
+            'bottom': 0.1
+        },
+        'horizontal': {
+            'left': 0.4,
+            'right': 0.9,
+            'top': 0.95,
+            'bottom': 0.1
+        },
+        'pie': {
+            'left': 0.1,
+            'right': 0.7,
+            'top': 0.95,
+            'bottom': 0.1
+        }
     }
 }
 
@@ -210,7 +230,7 @@ def get_salary_by_city_data():
     return result
 
 def get_vacancy_share_by_city_data():
-    data = SalaryByCity.objects.filter(is_for_profession=False).order_by('-vacancy_share')[:10]
+    data = SalaryByCity.objects.filter(is_for_profession=True).order_by('-vacancy_share')[:10]
     result = {
         'cities': [item.city for item in data],
         'shares': [item.vacancy_share for item in data],
@@ -294,7 +314,8 @@ def generate_salary_by_year_chart():
         prof_salaries = filter_extreme_salaries(data['prof_salaries'])
 
         fig, ax = plt.subplots(figsize=CHART_STYLES['figure_size'])
-        plt.subplots_adjust(right=0.9, left=0.01)
+        plt.subplots_adjust(**CHART_STYLES['padding']['default'])
+        
         bar_width = 0.35
         index = np.arange(len(years))
         
@@ -407,6 +428,7 @@ def generate_vacancies_by_year_chart():
         prof_vacancies = data['prof_vacancy_counts']
         
         fig, ax = plt.subplots(figsize=CHART_STYLES['figure_size'])
+        plt.subplots_adjust(**CHART_STYLES['padding']['default'])
         ax.set_yscale('log')
         
         line1 = ax.plot(
@@ -509,7 +531,7 @@ def generate_salary_by_city_chart():
         csharp_salaries = data['csharp_salaries']
         
         fig, ax = plt.subplots(figsize=CHART_STYLES['figure_size'])
-        plt.subplots_adjust(right=0.85)
+        plt.subplots_adjust(**CHART_STYLES['padding']['default'])
         
         bar_height = 0.35
         y_pos = np.arange(len(cities))
@@ -580,7 +602,6 @@ def generate_salary_by_city_chart():
         ax.spines['left'].set_color(CHART_STYLES['colors']['grid'])
         ax.spines['bottom'].set_color(CHART_STYLES['colors']['grid'])
         ax.grid(axis='x', linestyle='--', alpha=0.7)
-                        
         plt.tight_layout()
         output_path = Path(settings.MEDIA_ROOT) / 'charts' / 'salary_by_city.png'
         plt.savefig(output_path, dpi=CHART_STYLES['dpi'], bbox_inches='tight')
@@ -604,8 +625,8 @@ def generate_vacancy_share_by_city_chart():
         shares = data['shares']
         explode = [0.1] + [0]*(len(cities)-1)
         
-        fig, ax = plt.subplots(figsize=(16, 10))
-        plt.subplots_adjust(left=0.1, right=0.7)
+        fig, ax = plt.subplots(figsize=CHART_STYLES['figure_size'])
+        plt.subplots_adjust(**CHART_STYLES['padding']['pie'])
         
         colors = sns.color_palette("husl", len(cities))
         
@@ -653,7 +674,7 @@ def generate_vacancy_share_by_city_chart():
             
         plt.tight_layout()
         output_path = Path(settings.MEDIA_ROOT) / 'charts' / 'vacancy_share_by_city.png'
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.savefig(output_path, dpi=CHART_STYLES['dpi'], bbox_inches='tight')
         plt.close()
         logger.info(f"График сохранен: {output_path}")
         
@@ -666,86 +687,93 @@ def generate_top_skills_chart():
         configure_plot_style()
         data = get_top_skills_data()
         
-        if not data['top_20_skills']:
+        if not data.get('skills_by_year'):
             logger.warning("Нет данных по навыкам для C# разработчиков")
             return
-        
-        skill_names = [skill['display_name'] for skill in data['top_20_skills']]
-        counts = [skill['count'] for skill in data['top_20_skills']]
-        
-        fig, ax = plt.subplots(figsize=CHART_STYLES['figure_size'])
-        
-        bar_color = CHART_STYLES['colors']['general']
-        text_color = CHART_STYLES['colors']['text']
-        
-        bars = ax.barh(
-            skill_names[::-1],
-            counts[::-1],
-            color=bar_color,
-            edgecolor='white',
-            linewidth=1,
-            alpha=0.9,
-            height=0.7
-        )
-        
-        ax.set_title('ТОП-20 наиболее востребованных навыков', 
+
+        for year, skills in data['skills_by_year'].items():
+            top_skills = sorted(skills, key=lambda x: x['count'], reverse=True)[:20]
+            
+            if not top_skills:
+                logger.warning(f"Нет данных по навыкам за {year} год")
+                continue
+
+            skill_names = [skill['name'] for skill in top_skills]
+            counts = [skill['count'] for skill in top_skills]
+
+            fig, ax = plt.subplots(figsize=(15, 6))
+            plt.subplots_adjust(**CHART_STYLES['padding']['horizontal'])
+            
+            bar_color = CHART_STYLES['colors']['general']
+            text_color = CHART_STYLES['colors']['text']
+
+            bars = ax.barh(
+                skill_names[::-1],
+                counts[::-1],
+                color=bar_color,
+                edgecolor='white',
+                linewidth=1,
+                alpha=0.9,
+                height=0.7
+            )
+
+            ax.set_title(
+                f'ТОП-20 наиболее востребованных навыков ({year} год)',
                 pad=20,
                 fontsize=16,
                 fontweight='bold',
-                color=text_color)
-        
-        ax.set_xlabel('Количество упоминаний', 
-                    labelpad=15,
-                    fontsize=14,
-                    color=text_color)
-        
-        ax.set_ylim(-0.5, len(skill_names)-0.5)
-        
-        max_count = max(counts) if counts else 0
-        for bar in bars:
-            width = bar.get_width()
-            ax.text(
-                width + (max_count * 0.02),
-                bar.get_y() + bar.get_height()/2.,
-                f'{int(width):,}'.replace(',', ' '),
-                ha='left',
-                va='center',
-                fontsize=12,
-                fontweight='bold',
                 color=text_color
             )
-            
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.spines['bottom'].set_alpha(0.3)
-        
-        ax.grid(axis='x', linestyle='--', alpha=0.3)
-        ax.set_axisbelow(True)
-        
-        ax.tick_params(axis='y', labelsize=11, colors=text_color)
-        ax.tick_params(axis='x', colors=text_color)
-        
-        plt.subplots_adjust(left=0.4, right=0.9, top=0.95, bottom=0.05)
-        
-        output_path = Path(settings.MEDIA_ROOT) / 'charts' / 'top_skills.png'
-        plt.savefig(output_path, dpi=CHART_STYLES['dpi'], bbox_inches='tight')
-        plt.close()
-        logger.info(f"График сохранен: {output_path}")
-        
+
+            ax.set_xlabel(
+                'Количество упоминаний',
+                labelpad=15,
+                fontsize=14,
+                color=text_color
+            )
+
+            ax.set_ylim(-0.5, len(skill_names)-0.5)
+
+            max_count = max(counts) if counts else 0
+            for bar in bars:
+                width = bar.get_width()
+                ax.text(
+                    width + (max_count * 0.02),
+                    bar.get_y() + bar.get_height()/2.,
+                    f'{int(width):,}'.replace(',', ' '),
+                    ha='left',
+                    va='center',
+                    fontsize=12,
+                    fontweight='bold',
+                    color=text_color
+                )
+
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['bottom'].set_alpha(0.3)
+
+            ax.grid(axis='x', linestyle='--', alpha=0.3)
+            ax.set_axisbelow(True)
+
+            ax.tick_params(axis='y', labelsize=11, colors=text_color)
+            ax.tick_params(axis='x', colors=text_color)
+
+            plt.tight_layout()
+            output_path = Path(settings.MEDIA_ROOT) / 'charts' / f'top_skills_{year}.png'
+            plt.savefig(output_path, dpi=CHART_STYLES['dpi'], bbox_inches='tight')
+            plt.close()
+            logger.info(f"График для {year} года сохранен: {output_path}")
+
     except Exception as e:
         logger.error(f"Ошибка генерации top_skills_chart: {str(e)}")
         raise
+
 
 def generate_all_charts():
     try:
         charts_dir, data_dir = setup_environment()
         logger.info("Начало генерации графиков и данных...")
-        
-        salary_by_year_data = get_salary_by_year_data()
-        salary_by_city_data = get_salary_by_city_data()
-        vacancy_share_data = get_vacancy_share_by_city_data()
-        top_skills_data = get_top_skills_data()
         
         generate_salary_by_year_chart()
         generate_vacancies_by_year_chart()

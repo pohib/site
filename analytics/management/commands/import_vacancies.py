@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 getcontext().prec = 6
 
 class Command(BaseCommand):
-    help = 'Import vacancies data from CSV file with daily currency conversion'
+    help = 'Импорт вакансий из CSV таблицы'
 
     def add_arguments(self, parser):
-        parser.add_argument('file_path', type=str, help='Path to CSV file')
-        parser.add_argument('--max-salary', type=int, default=10000000, help='Maximum allowed salary')
+        parser.add_argument('file_path', type=str, help='Путь к CSV файоу')
+        parser.add_argument('--max-salary', type=int, default=10000000, help='Максимально допустимая зарплата')
         
     def get_historical_currency_rates(self, date):
         try:

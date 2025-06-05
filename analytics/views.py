@@ -10,6 +10,7 @@ import requests
 import dateutil.parser
 from django.utils.timezone import make_aware
 from django.utils import timezone
+from django.http import JsonResponse
 
 
 logger = logging.getLogger(__name__)
@@ -46,67 +47,103 @@ def normalize_skill_name(name):
     return replacements.get(name, name)
 
 def general_stats(request):
-    salary_data = load_json_data('salary_by_year.json')
-    city_salary_data = load_json_data('salary_by_city.json')
-    vacancy_share_data = load_json_data('vacancy_share_by_city.json')
-    skills_data = load_json_data('top_skills.json')
+    try:
+        salary_data = load_json_data('salary_by_year.json')
+        city_salary_data = load_json_data('salary_by_city.json')
+        vacancy_share_data = load_json_data('vacancy_share_by_city.json')
+        skills_data = load_json_data('top_skills.json')
+    except Exception as e:
+        logger.error(f"Ошибка загрузки данных: {str(e)}")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'Ошибка загрузки данных'}, status=500)
+        raise
 
-    salary_by_year = []
-    for i in range(len(salary_data.get('years', []))):
-        year_data = {
-            'year': salary_data['years'][i],
-            'average_salary': salary_data['avg_salaries'][i],
-            'vacancy_count': salary_data['vacancy_counts'][i],
-            'profession_average_salary': salary_data['prof_salaries'][i],
-            'profession_vacancy_count': salary_data['prof_vacancy_counts'][i]
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            year = request.GET.get('year')
+            skills = skills_data.get('skills_by_year', {}).get(str(year), [])
+            max_count = max(skill['count'] for skill in skills) if skills else 1
+            
+            response_skills = []
+            for skill in sorted(skills, key=lambda x: x['count'], reverse=True)[:20]:
+                response_skills.append({
+                    'name': skill['name'],
+                    'count': skill['count'],
+                    'share': (skill['count'] / max_count) * 100
+                })
+            
+            return JsonResponse({
+                'skills': response_skills,
+                'year': year
+            })
+        except (ValueError, TypeError):
+            return JsonResponse({'error': 'Неверный формат года'}, status=400)
+        except Exception as e:
+            logger.error(f"Ошибка обработки AJAX-запроса: {str(e)}")
+            return JsonResponse({'error': 'Внутренняя ошибка сервера'}, status=500)
+
+    try:
+        salary_by_year = []
+        for i in range(len(salary_data.get('years', []))):
+            year_data = {
+                'year': salary_data['years'][i],
+                'average_salary': salary_data['avg_salaries'][i],
+                'vacancy_count': salary_data['vacancy_counts'][i],
+                'profession_average_salary': salary_data['prof_salaries'][i],
+                'profession_vacancy_count': salary_data['prof_vacancy_counts'][i],
+                'profession_share': (salary_data['prof_vacancy_counts'][i] / salary_data['vacancy_counts'][i]) * 100 
+                                if salary_data['vacancy_counts'][i] > 0 else 0
+            }
+            salary_by_year.append(year_data)
+
+        all_salaries = city_salary_data.get('all_salaries', [])
+        overall_avg_salary = sum(all_salaries) / len(all_salaries) if all_salaries else 0
+        
+        salary_by_city = []
+        for city, salary in zip(city_salary_data.get('cities', []), 
+                            city_salary_data.get('csharp_salaries', [])):
+            salary_by_city.append({
+                'city': city,
+                'average_salary': salary,
+                'difference': ((salary - overall_avg_salary) / overall_avg_salary) * 100 
+                            if overall_avg_salary else 0
+            })
+
+        vacancy_share_by_city = [
+            {'city': city, 'vacancy_share': share}
+            for city, share in zip(vacancy_share_data.get('cities', []), 
+                                vacancy_share_data.get('shares', []))
+        ]
+
+        years = sorted(skills_data.get('skills_by_year', {}).keys(), reverse=True)
+        default_year = years[0] if years else None
+
+        default_skills = []
+        if default_year:
+            skills = skills_data['skills_by_year'].get(default_year, [])
+            max_count = max(skill['count'] for skill in skills) if skills else 1
+            default_skills = [{
+                'name': skill['name'],
+                'count': skill['count'],
+                'share': (skill['count'] / max_count) * 100
+            } for skill in sorted(skills, key=lambda x: x['count'], reverse=True)[:20]]
+
+        context = {
+            'salary_by_year': salary_by_year,
+            'salary_by_city': salary_by_city[:10],
+            'vacancy_share_by_city': vacancy_share_by_city[:10],
+            'years': years,
+            'default_year': default_year,
+            'default_skills': default_skills
         }
-        if year_data['vacancy_count'] > 0:
-            year_data['profession_share'] = (
-                year_data['profession_vacancy_count'] / year_data['vacancy_count']
-            ) * 100
-        else:
-            year_data['profession_share'] = 0
-        salary_by_year.append(year_data)
 
-    all_salaries = city_salary_data.get('all_salaries', [])
-    overall_avg_salary = sum(all_salaries) / len(all_salaries) if all_salaries else 0
+        return render(request, 'analytics/general_stats.html', context)
 
-    salary_by_city = []
-    for city, salary in zip(city_salary_data.get('cities', []), 
-                        city_salary_data.get('csharp_salaries', [])):
-        city_data = {
-            'city': city,
-            'average_salary': salary,
-            'difference': ((salary - overall_avg_salary) / overall_avg_salary) * 100 
-                        if overall_avg_salary else 0
-        }
-        salary_by_city.append(city_data)
-
-    vacancy_share_by_city = []
-    for city, share in zip(vacancy_share_data.get('cities', []), 
-                        vacancy_share_data.get('shares', [])):
-        vacancy_share_by_city.append({
-            'city': city,
-            'vacancy_share': share
-        })
-
-    max_skill_count = max(skill['count'] for skill in skills_data.get('top_skills', [])) if skills_data.get('top_skills') else 1
-    skills = []
-    for skill in skills_data.get('top_skills', []):
-        skill_data = {
-            'name': skill['display_name'],
-            'count': skill['count'],
-            'year': skill.get('year', 'N/A'),
-            'share': (skill['count'] / max_skill_count) * 100
-        }
-        skills.append(skill_data)
-
-    return render(request, 'analytics/general_stats.html', {
-        'salary_by_year': salary_by_year,
-        'salary_by_city': salary_by_city[:10],
-        'vacancy_share_by_city': vacancy_share_by_city[:10],
-        'skills': skills[:20],
-    })
+    except Exception as e:
+        logger.error(f"Ошибка подготовки данных: {str(e)}")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'Ошибка подготовки данных'}, status=500)
+        raise
 
 def demand(request):
     data = load_json_data('salary_by_year.json')
