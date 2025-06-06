@@ -701,7 +701,7 @@ def generate_top_skills_chart():
             skill_names = [skill['name'] for skill in top_skills]
             counts = [skill['count'] for skill in top_skills]
 
-            fig, ax = plt.subplots(figsize=(15, 6))
+            fig, ax = plt.subplots(figsize=(16, 6))
             plt.subplots_adjust(**CHART_STYLES['padding']['horizontal'])
             
             bar_color = CHART_STYLES['colors']['general']
