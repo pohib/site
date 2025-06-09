@@ -1,16 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block title %}Востребованность C# разработчиков{% endblock %}
-
-{% block breadcrumbs %}
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Востребованность</li>
-    </ol>
-</nav>
-{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
@@ -30,6 +20,25 @@
     .decrease {
         color: var(--danger-color);
     }
+    
+    .chart-container {
+        height: {% if chart_settings %}{{ chart_settings.mobile_height }}px{% else %}300px{% endif %};
+        width: {% if chart_settings %}
+            {% if chart_settings.mobile_width <= 100 %}{{ chart_settings.mobile_width }}%{% else %}{{ chart_settings.mobile_width }}px{% endif %}
+        {% else %}100%{% endif %};
+        
+        position: relative;
+        margin: 0 auto;
+    }
+    
+    @media (min-width: 992px) {
+        .chart-container {
+            height: {% if chart_settings %}{{ chart_settings.desktop_height }}px{% else %}500px{% endif %};
+            width: {% if chart_settings %}
+                {% if chart_settings.desktop_width <= 100 %}{{ chart_settings.desktop_width }}%{% else %}{{ chart_settings.desktop_width }}px{% endif %}
+            {% else %}100%{% endif %};
+        }
+    }
 </style>
 {% endblock %}
 
@@ -47,8 +56,14 @@
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <h5 class="card-title">Средняя зарплата</h5>
-                    <p class="card-text display-6">{{ avg_salary|floatformat:"0" }} ₽</p>
-                    <p class="text-muted">по данным за {{ current_year }} год</p>
+                    <p class="card-text display-6">
+                    {% if current_year_stats.avg_salary %}
+                        {{ current_year_stats.avg_salary }} ₽
+                    {% else %}
+                        Н/Д
+                    {% endif %}
+                    </p>
+                    <p class="text-muted">за {{current_year}} год</p>
                 </div>
             </div>
         </div>
@@ -56,7 +71,13 @@
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <h5 class="card-title">Количество вакансий</h5>
-                    <p class="card-text display-6">{{ vacancy_count }}</p>
+                    <p class="card-text display-6">
+                        {% if current_year_stats.vacancy_count %}
+                            {{ current_year_stats.vacancy_count }}
+                        {% else %}
+                            Н/Д
+                        {% endif %}
+                    </p>
                     <p class="text-muted">за последние 12 месяцев</p>
                 </div>
             </div>
@@ -83,7 +104,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <canvas id="salaryChart" data-chart-type="line" data-chart-data="{% static 'data/salary_data.json' %}"></canvas>
+                        <canvas id="salaryChart"></canvas>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -123,7 +144,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <canvas id="vacancyChart" data-chart-type="bar" data-chart-data="{% static 'data/vacancy_data.json' %}"></canvas>
+                        <canvas id="vacancyChart"></canvas>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -155,77 +176,81 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    async function loadChartData(url) {
-        const response = await fetch(url);
-        return await response.json();
-    }
+    const salaryData = {
+        labels: [{% for item in salary_data %}"{{ item.year }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Средняя зарплата (₽)',
+            data: [{% for item in salary_data %}{{ item.salary|floatformat:"0" }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    };
 
-    async function initCharts() {
-        const salaryCtx = document.getElementById('salaryChart').getContext('2d');
-        const vacancyCtx = document.getElementById('vacancyChart').getContext('2d');
-        
-        const salaryData = await loadChartData(document.getElementById('salaryChart').dataset.chartData);
-        const vacancyData = await loadChartData(document.getElementById('vacancyChart').dataset.chartData);
+    const vacancyData = {
+        labels: [{% for item in vacancy_data %}"{{ item.year }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Количество вакансий',
+            data: [{% for item in vacancy_data %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    };
 
-        new Chart(salaryCtx, {
-            type: 'line',
-            data: salaryData,
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Динамика средних зарплат (₽)'
-                    },
-                },
-                interaction: {
-                    intersect: false,
-                },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString('ru-RU') + ' ₽';
-                            }
+    const salaryCtx = document.getElementById('salaryChart').getContext('2d');
+    new Chart(salaryCtx, {
+        type: 'line',
+        data: {
+        ...salaryData,
+        datasets: salaryData.datasets.map(dataset => ({
+            ...dataset,
+            pointRadius: 5,
+            pointHoverRadius: 8,
+            pointHitRadius: 10
+        }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: {% if chart_settings %}{{ chart_settings.maintain_aspect_ratio|yesno:"true,false" }}{% else %}false{% endif %},
+            plugins: {
+                title: { display: true, text: 'Динамика средних зарплат (₽)' }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString('ru-RU') + ' ₽';
                         }
                     }
                 }
             }
-        });
+        }
+    });
 
-        new Chart(vacancyCtx, {
-            type: 'bar',
-            data: vacancyData,
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Динамика количества вакансий'
-                    },
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
-                    }
+    const vacancyCtx = document.getElementById('vacancyChart').getContext('2d');
+    new Chart(vacancyCtx, {
+        type: 'bar',
+        data: vacancyData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: {% if chart_settings %}{{ chart_settings.maintain_aspect_ratio|yesno:"true,false" }}{% else %}false{% endif %},
+            plugins: {
+                title: { display: true, text: 'Динамика количества вакансий' }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 }
                 }
             }
-        });
-    }
-    
-    if (typeof Chart !== 'undefined') {
-        initCharts();
-    }
+        }
+    });
 });
 </script>
 {% endblock %}

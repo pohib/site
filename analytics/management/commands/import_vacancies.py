@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 getcontext().prec = 6
 
 class Command(BaseCommand):
-    help = 'Import vacancies data from CSV file with daily currency conversion'
+    help = 'Импорт вакансий из CSV таблицы'
 
     def add_arguments(self, parser):
-        parser.add_argument('file_path', type=str, help='Path to CSV file')
-        parser.add_argument('--max-salary', type=int, default=10000000, help='Maximum allowed salary')
+        parser.add_argument('file_path', type=str, help='Путь к CSV файоу')
+        parser.add_argument('--max-salary', type=int, default=10000000, help='Максимально допустимая зарплата')
         
     def get_historical_currency_rates(self, date):
         try:
@@ -37,6 +37,8 @@ class Command(BaseCommand):
                 'RUR': Decimal('1.0'),
                 'RUB': Decimal('1.0'),
             }
+            
+            byr_to_byn_rate = Decimal('10000')
             
             currency_codes = {
                 'USD': 'R01235',
@@ -56,9 +58,15 @@ class Command(BaseCommand):
                 
                 if valute_id == currency_codes['BYR']:
                     rates['BYR'] = value / nominal
+                    
                 elif valute_id == currency_codes['BYN']:
                     rates['BYN'] = value / nominal
-            
+                        
+            if 'BYN' not in rates and 'BYR' in rates:
+                rates['BYN'] = rates['BYR'] * byr_to_byn_rate
+            elif 'BYR' not in rates and 'BYN' in rates:
+                rates['BYR'] = rates['BYN'] / byr_to_byn_rate
+                
             logger.debug(f"Курсы валют на {date_str}: {rates}")
             return rates
             
@@ -88,12 +96,20 @@ class Command(BaseCommand):
             'RUB': Decimal('1.0'),
         }
         
-    def convert_salary(self, salary, currency, rates):
-        
+    def convert_salary(self, salary, currency, rates):       
         if salary is None or math.isnan(salary) or salary <= 0:
             return None
             
         currency = currency.upper().strip()
+        
+        if currency == 'BYR':
+            if 'BYR' in rates:
+                return float(Decimal(salary) * rates['BYR'])
+            elif 'BYN' in rates:
+                return float(Decimal(salary) * rates['BYN'] / Decimal('10000'))
+            else:
+                logger.debug("Курс BYR/BYN не найден, используется приблизительный")
+                return float(Decimal(salary) * Decimal('0.00285'))
         
         if currency not in rates:
             logger.debug(f"Неподдерживаемая валюта: {currency}")
@@ -162,6 +178,8 @@ class Command(BaseCommand):
                     logger.warning(f"Ошибка обработки вакансии: {e}")
                     skipped_rows += 1
                     
+            print(f"Всего строк в файле: {total_rows}")
+            print(f"Реально обработано строк: {processed_rows + skipped_rows}")
             logger.info(f"Обработано строк: {processed_rows}, пропущено: {skipped_rows}")
             
     def process_vacancy(self, row, rates_cache, max_salary):
@@ -174,6 +192,7 @@ class Command(BaseCommand):
             if year_month not in rates_cache:
                 rates_cache[year_month] = self.get_monthly_currency_rates(year_month)
             rates = rates_cache[year_month]
+            
         except Exception as e:
             logger.debug(f"Не удалось распарсить дату публикации: {e}")
             return False
@@ -182,6 +201,10 @@ class Command(BaseCommand):
             salary_from = float(row['salary_from']) if row['salary_from'] else None
             salary_to = float(row['salary_to']) if row['salary_to'] else None
             currency = row['salary_currency'].strip().upper()
+            unsupported_currencies = ['UAH', 'GEL', 'UZS']
+            if currency in unsupported_currencies:
+                logger.debug(f"Пропуск вакансии с неподдерживаемой валютой: {currency}")
+                return False
         except Exception as e:
             logger.debug(f"Не удалось распарсить зарплату: {e}")
             return False

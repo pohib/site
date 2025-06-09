@@ -7,11 +7,83 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/charts.css' %}">
+<style>
+    .skills-table-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .table-responsive,
+    .dataTables_wrapper {
+        overflow-x: visible !important;
+        width: 100% !important;
+    }
+
+    table#skillsTable {
+        width: 100% !important;
+        table-layout: auto;
+    }
+
+    #skillsTable th, 
+    #skillsTable td {
+        white-space: normal !important;
+    }
+
+    .dataTables_scrollHeadInner, 
+    .dataTables_scrollHead, 
+    .dataTables_scroll {
+        width: 100% !important;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        background-color: white;
+        z-index: 10;
+    }
+    .loading-indicator {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .chart-container {
+        position: relative;
+        min-height: 300px;
+    }
+
+    .chart-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    }
+
+    table.dataTable {
+    width: 100% !important;
+    min-width: 0 !important;
+    }
+
+    @media (max-width: 768px) {
+        .chart-img {
+            max-height: 400px;
+        }
+        .chart-container {
+            min-height: 250px;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <h2 class="mb-4">Общая статистика по профессии C# разработчик</h2>
+    <h2 class="mb-4">Общая статистика по профессии C# разработчика</h2>
     <div class="card chart-card mb-5">
         <div class="card-header bg-primary text-white">
             <h3 class="mb-0">Динамика уровня зарплат по годам</h3>
@@ -43,10 +115,7 @@
                     </table>
                 </div>
                 <div>
-                    <img src="{{ MEDIA_URL }}charts/salary_by_year.png" alt="Динамика зарплат по годам" class="chart-img">
-                    <div class="chart-legend mt-3">
-                        <div class="legend-item"><span class="legend-color" style="background: #2394d2;"></span> Все вакансии</div>
-                        <div class="legend-item"><span class="legend-color" style="background: #28a745;"></span> C# разработчик</div>
+                    <img src="{{ MEDIA_URL }}charts/salary_by_year.png" alt="Динамика зарплат по годам" class="chart-img img-fluid">
                     </div>
                 </div>
             </div>
@@ -82,7 +151,7 @@
                     </table>
                 </div>
                 <div>
-                    <img src="{{ MEDIA_URL }}charts/vacancies_by_year.png" alt="Динамика вакансий по годам" class="chart-img">
+                    <img src="{{ MEDIA_URL }}charts/vacancies_by_year.png" alt="Динамика вакансий по годам" class="chart-img img-fluid">
                 </div>
             </div>
         </div>
@@ -117,7 +186,7 @@
                 </table>
                 </div>
                 <div>
-                    <img src="{{ MEDIA_URL }}charts/salary_by_city.png" alt="Зарплаты по городам" class="chart-img">
+                    <img src="{{ MEDIA_URL }}charts/salary_by_city.png" alt="Зарплаты по городам" class="chart-img img-fluid">
                 </div>
             </div>
         </div>
@@ -150,7 +219,7 @@
                     </table>
                 </div>
                 <div>
-                    <img src="{{ MEDIA_URL }}charts/vacancy_share_by_city.png" alt="Доля вакансий по городам" class="chart-img">
+                    <img src="{{ MEDIA_URL }}charts/vacancy_share_by_city.png" alt="Доля вакансий по городам" class="chart-img img-fluid">
                 </div>
             </div>
         </div>
@@ -158,23 +227,30 @@
 
     <div class="card chart-card">
         <div class="card-header bg-primary text-white">
-            <h3 class="mb-0">ТОП-20 навыков по годам</h3>
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">ТОП-20 навыков по годам</h3>
+                <div class="year-selector">
+                    <select id="yearSelect" class="form-select">
+                        {% for year in years %}
+                            <option value="{{ year }}" {% if year == default_year %}selected{% endif %}>{{ year }} год</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
+            <div class="skills-table-container mb-3">
+                <table id="skillsTable" class="table table-hover">
+                    <thead class="table-light sticky-header">
                         <tr>
-                            <th>Год</th>
                             <th>Навык</th>
                             <th>Количество упоминаний</th>
                             <th>Доля от всех навыков (%)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for skill in skills|slice:":20" %}
+                        {% for skill in default_skills %}
                         <tr>
-                            <td>{{ skill.year }}</td>
                             <td>{{ skill.name }}</td>
                             <td>{{ skill.count }}</td>
                             <td>{{ skill.share|floatformat:2 }}%</td>
@@ -183,37 +259,135 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mt-4">
-                <img src="{{ MEDIA_URL }}charts/top_skills.png" alt="ТОП навыков" class="chart-img">
+            <div class="chart-container">
+                <div class="loading-indicator">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+                <img id="skillsChart" src="{{ MEDIA_URL }}charts/top_skills_{{ default_year }}.png" 
+                    alt="ТОП навыков за {{ default_year }} год" class="chart-img img-fluid fade-in">
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
+
 {% block extra_js %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    $('table').each(function() {
-        $(this).DataTable({
-            responsive: true,
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
+$(function () {
+    console.log("DOM загружен");
+
+    let skillsTable = $('#skillsTable').DataTable({
+        responsive: true,
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
+        },
+        paging: false,
+        searching: false,
+        info: false,
+        lengthChange: false,
+        ordering: false,
+        destroy: true
+    });
+
+    $('#yearSelect').on('change', function () {
+        const selectedYear = $(this).val();
+        console.log('Выбран год:', selectedYear);
+
+        const chartContainer = $('.chart-container');
+        const loadingIndicator = chartContainer.find('.loading-indicator');
+        const chartImg = $('#skillsChart');
+
+        loadingIndicator.show();
+        chartImg.hide().removeClass('fade-in');
+
+        const newImageSrc = '/media/charts/top_skills_' + selectedYear + '.png?' + new Date().getTime();
+        console.log('Новая картинка:', newImageSrc);
+
+        const csrftoken = getCookie('csrftoken');
+
+        $.ajax({
+            url: window.location.href,
+            type: 'GET',
+            data: {
+                year: selectedYear,
+                is_ajax: true
             },
-            dom: '<"top"f>rt<"bottom"lip><"clear">',
-            pageLength: 5
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrftoken
+            },
+            success: function (response) {
+                console.log('Успешный AJAX-ответ:', response);
+
+                if (response.skills) {
+                    skillsTable.destroy();
+                    const tbody = $('#skillsTable tbody');
+                    tbody.empty();
+
+                    response.skills.forEach(function (skill) {
+                        tbody.append(
+                            '<tr>' +
+                            '<td>' + skill.name + '</td>' +
+                            '<td>' + skill.count + '</td>' +
+                            '<td>' + skill.share.toFixed(2) + '%</td>' +
+                            '</tr>'
+                        );
+                    });
+
+                    skillsTable = $('#skillsTable').DataTable({
+                        responsive: true,
+                        language: {
+                            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
+                        },
+                        pageLength: 5,
+                        paging: false,
+                        searching: false,
+                        info: false,
+                        lengthChange: false,
+                        ordering: false,
+                        destroy: true
+                    });
+
+                    const newImg = new Image();
+                    newImg.onload = function () {
+                        chartImg.attr('src', newImageSrc);
+                        loadingIndicator.hide();
+                        chartImg.addClass('fade-in').show();
+                    };
+                    newImg.onerror = function () {
+                        console.warn('Не удалось загрузить изображение:', newImageSrc);
+                        loadingIndicator.hide();
+                        chartImg.attr('src', newImageSrc).show();
+                    };
+                    newImg.src = newImageSrc;
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Ошибка AJAX-запроса:', error);
+                loadingIndicator.hide();
+                chartImg.show();
+            }
         });
     });
 
-    $('.nav-link').on('click', function(e) {
-        if (this.hash !== '') {
-            e.preventDefault();
-            const hash = this.hash;
-            $('html, body').animate({
-                scrollTop: $(hash).offset().top - 20
-            }, 800);
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
         }
-    });
+        return cookieValue;
+    }
 });
 </script>
 {% endblock %}

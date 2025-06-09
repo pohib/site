@@ -24,7 +24,10 @@ INSTALLED_APPS = [
     'analytics',
     'vacancies',
     'django_ckeditor_5',
+    'adminsortable',
 ]
+
+
 
 CKEDITOR_5_CONFIGS = {
     'default': {
@@ -120,6 +123,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
+                'core.context_processors.dynamic_pages',
             ],
         },
     },
@@ -163,7 +167,7 @@ USE_I18N = True
 USE_TZ = True
 
 
-
+CKEDITOR_5_CUSTOM_CSS = 'css/ckeditor5/admin_dark_mode_fix.css'
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

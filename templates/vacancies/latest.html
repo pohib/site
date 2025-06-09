@@ -80,19 +80,19 @@
                     <label class="form-label">Сортировка:</label>
                     <div class="btn-group" role="group">
                         <a href="?sort=salary&order=desc{% if selected_city %}&city={{ selected_city }}{% endif %}" 
-                           class="btn btn-outline-secondary {% if sort_by == 'salary' and order == 'desc' %}active{% endif %}">
+                        class="btn btn-outline-secondary {% if sort_by == 'salary' and order == 'desc' %}active{% endif %}">
                             Зарплата <i class="bi bi-sort-down sort-icon"></i>
                         </a>
                         <a href="?sort=salary&order=asc{% if selected_city %}&city={{ selected_city }}{% endif %}" 
-                           class="btn btn-outline-secondary {% if sort_by == 'salary' and order == 'asc' %}active{% endif %}">
+                        class="btn btn-outline-secondary {% if sort_by == 'salary' and order == 'asc' %}active{% endif %}">
                             Зарплата <i class="bi bi-sort-up sort-icon"></i>
                         </a>
                         <a href="?sort=city&order=asc{% if selected_city %}&city={{ selected_city }}{% endif %}" 
-                           class="btn btn-outline-secondary {% if sort_by == 'city' %}active{% endif %}">
+                        class="btn btn-outline-secondary {% if sort_by == 'city' %}active{% endif %}">
                             Город <i class="bi bi-sort-alpha-down sort-icon"></i>
                         </a>
                         <a href="?{% if selected_city %}city={{ selected_city }}{% endif %}" 
-                           class="btn btn-outline-secondary {% if not sort_by %}active{% endif %}">
+                        class="btn btn-outline-secondary {% if not sort_by %}active{% endif %}">
                             По умолчанию
                         </a>
                     </div>
@@ -140,7 +140,7 @@
                                     Дата не указана
                                 {% endif %}
                             </p>
-                                                       
+                                                    
                             {% if vacancy.skills %}
                             <div class="mb-2">
                                 {% for skill in vacancy.skills_list %}

@@ -8,14 +8,14 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
-    <style>
+    <style>        
         .sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
             width: 60px;
-            background-color: #343a40;
+            background-color: #363b41;
             transition: width 0.3s ease;
             z-index: 1000;
             overflow: hidden;
@@ -38,15 +38,15 @@
         }
 
         .sidebar-link {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(216, 209, 209, 0.8);
             text-decoration: none;
             display: flex;
             align-items: center;
-            transition: color 0.3s;
+            transition: all 0.3s ease;
         }
 
         .sidebar-link:hover {
-            color: white;
+            color: #ccc7c7 !important;
         }
 
         .sidebar-icon {
@@ -57,20 +57,340 @@
 
         .sidebar-text {
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, color 0.3s;
+            color: rgba(221, 218, 218, 0.7);
         }
 
         .sidebar:hover .sidebar-text {
+            color: #ffffff !important;
             opacity: 1;
         }
 
         .main-content {
-            margin-left: 60px;
             transition: margin-left 0.3s ease;
         }
 
-        .sidebar:hover ~ .main-content {
-            margin-left: 250px;
+        @media (min-width: 992px) {
+            .sidebar {
+                display: block;
+            }
+            .main-content {
+                margin-left: 60px;
+            }
+            .sidebar:hover ~ .main-content {
+                margin-left: 250px;
+            }
+            .navbar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .sidebar {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .navbar {
+                display: block;
+            }
+        }
+        
+        .dark-theme .main-content {
+            background-color: #121212;
+        }
+
+        .navbar-dark .navbar-nav .nav-link {
+            color: rgba(216, 214, 214, 0.8);
+        }
+
+        .dark-theme .navbar-dark .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .dark-theme .navbar-dark .navbar-nav .nav-link:hover {
+            color: rgba(255, 255, 255, 1);
+        }
+
+        .dark-theme .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark-theme .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        .dark-theme .site-footer a {
+            color: #bbbbbb;
+        }
+
+        .dark-theme .site-footer a:hover {
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        .dark-theme .theme-toggle {
+            border-color: #666;
+            color: #e0e0e0;
+        }
+
+        .dark-theme .theme-toggle:hover {
+            background-color: #333;
+            color: #ffffff;
+        }
+
+        body.dark-theme {
+        background-color: #121212;
+        color: #e0e0e0;
+        }
+
+        .dark-theme .card {
+            background-color: #1e1e1e;
+            border-color: #333;
+        }
+
+        .dark-theme .card-text {
+            color: #ffffff;
+        }
+
+        .dark-theme .card-title {
+            color: #ffffff;
+        }
+
+        .dark-theme .card-header {
+            background-color: #2d2d2d !important;
+            border-bottom-color: #333;
+        }
+
+        .dark-theme .table {
+            color: #101010;
+        }
+
+        .dark-theme .table th,
+        .dark-theme .table td {
+            border-color: #101010;
+        }
+
+        .dark-theme .table-hover tbody tr:hover {
+            background-color: #131212;
+            color: #fff;
+        }
+
+        .dark-theme .site-footer {
+            background-color: #1a1a1a !important;
+        }
+
+        .dark-theme .navbar-dark {
+            background-color: #1a1a1a !important;
+        }
+
+        .dark-theme .form-control {
+            background-color: #2d2d2d;
+            border-color: #444;
+            color: #e0e0e0;
+        }
+
+        .dark-theme .form-control:focus {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .dark-theme .input-group-text {
+            background-color: #ffffff;
+            border-color: #444;
+            color: #e0e0e0;
+        }
+
+        .dark-theme .btn-outline-secondary {
+            border-color: #666;
+            color: #e0e0e0;
+        }
+
+        .dark-theme .alert-warning {
+            background-color: #332b00;
+            border-color: #665600;
+            color: #ffd700;
+        }
+
+        .dark-theme .chartjs-render-monitor {
+            filter: invert(90%) hue-rotate(180deg);
+        }
+
+        .dark-theme .sidebar {
+            background-color: #1a1a1a;
+            border-right: 1px solid #232222;
+        }
+
+        .dark-theme .sidebar-link {
+            color: #b0b0b0;
+        }
+
+        .dark-theme .sidebar-link:hover {
+            color: #ffffff;
+        }
+
+        .dark-theme .logo-text h1,
+        .dark-theme .logo-text p {
+            color: #e0e0e0;
+        }
+
+        .dark-theme .logo-link:hover .logo-text h1,
+        .dark-theme .logo-link:hover .logo-text p {
+            color: #ffffff;
+        }
+
+        .theme-toggle {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+            border-radius: 15px;
+            background: #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #ced4da;
+            overflow: hidden;
+        }
+
+        .theme-toggle:after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .dark-theme .theme-toggle {
+            background: #444;
+        }
+
+        .dark-theme .theme-toggle:after {
+            left: 33px;
+            background: #222;
+        }
+
+        .theme-toggle i {
+            position: absolute;
+            font-size: 16px;
+            line-height: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle .bi-sun-fill {
+            left: 8px;
+            opacity: 1;
+            color: #ffc107;
+        }
+
+        .theme-toggle .bi-moon-fill {
+            right: 8px;
+            opacity: 0;
+            color: #6c757d;
+        }
+        
+        .dark-theme .theme-toggle .bi-sun-fill {
+            opacity: 0;
+        }
+
+        .dark-theme .theme-toggle .bi-moon-fill {
+            opacity: 1;
+        }
+
+        .sidebar .theme-toggle-container {
+            padding: 10px 15px;
+            margin-top: 5px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .dark-theme .sidebar .theme-toggle-container {
+            border-top-color: rgba(255,255,255,0.05);
+        }
+
+        .sidebar .theme-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 25px;
+            border-radius: 15px;
+            background: #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #ced4da;
+            overflow: hidden;
+            margin-left: -5px;
+        }
+
+
+        .sidebar .theme-toggle:after {
+            content: '';
+            position: absolute;
+            top: 1px;
+            left: 2px;
+            width: 20px;
+            height: 21px;
+            border-radius: 50%;
+            background: #2a2c2c;
+            box-shadow: 0 0 3px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .dark-theme .sidebar .theme-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 25px;
+            border-radius: 15px;
+            background: #302f2f;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #302f2f;
+            overflow: hidden;
+            margin-left: -5px;
+        }
+
+        .dark-theme .sidebar .theme-toggle:after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 27px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 3px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .navbar .theme-toggle {
+            margin-left: 10px;
+        }
+
+        .dark-theme .sidebar-text {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        @media (max-width: 991.98px) {
+            .navbar .theme-toggle-container {
+                display: flex;
+                justify-content: flex-end;
+                padding: 10px 15px;
+            }
+        }
+
+        .theme-toggle-container .sidebar-text {
+            opacity: 1;
+            margin-left: 10px;
+            color: #ffffff;
+        }
+
+        .dark-theme .theme-toggle-container .sidebar-text {
+            color: rgba(255, 255, 255, 0.8); 
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -92,43 +412,22 @@
 
     <aside class="sidebar">
         <ul class="sidebar-nav">
+            {% for page in dynamic_pages %}
             <li class="sidebar-item">
-                <a href="{% url 'home' %}" class="sidebar-link">
-                    <i class="bi bi-house-door sidebar-icon"></i>
-                    <span class="sidebar-text">Главная</span>
+                <a href="{% url 'page_detail' slug=page.slug %}" class="sidebar-link">
+                    <i class="bi {{ page.menu_icon }} sidebar-icon"></i>
+                    <span class="sidebar-text">{{ page.title }}</span>
                 </a>
             </li>
-            <li class="sidebar-item">
-                <a href="{% url 'general_stats' %}" class="sidebar-link">
-                    <i class="bi bi-bar-chart-line sidebar-icon"></i>
-                    <span class="sidebar-text">Общая статистика</span>
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'demand' %}" class="sidebar-link">
-                    <i class="bi bi-graph-up sidebar-icon"></i>
-                    <span class="sidebar-text">Востребованность</span>
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'geography' %}" class="sidebar-link">
-                    <i class="bi bi-globe sidebar-icon"></i>
-                    <span class="sidebar-text">География</span>
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'skills' %}" class="sidebar-link">
-                    <i class="bi bi-lightbulb sidebar-icon"></i>
-                    <span class="sidebar-text">Навыки</span>
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="{% url 'vacancies:latest' %}" class="sidebar-link">
-                    <i class="bi bi-briefcase sidebar-icon"></i>
-                    <span class="sidebar-text">Вакансии</span>
-                </a>
-            </li>
+            {% endfor %}
         </ul>
+        <div class="theme-toggle-container">
+            <button id="sidebarThemeToggle" class="theme-toggle">
+                <i class="bi bi-sun-fill"></i>
+                <i class="bi bi-moon-fill"></i>
+            </button>
+            <span class="sidebar-text" style="margin-left: 10px;">Тема</span>
+        </div>
     </aside>
 
     <div class="main-content">
@@ -139,13 +438,20 @@
                 </button>
                 <div class="collapse navbar-collapse" id="mainNav">
                     <ul class="navbar-nav me-auto">
-                        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}"><i class="bi bi-house-door"></i> Главная</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'general_stats' %}"><i class="bi bi-bar-chart-line"></i> Общая статистика</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'demand' %}"><i class="bi bi-graph-up"></i> Востребованность</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'geography' %}"><i class="bi bi-globe"></i> География</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'skills' %}"><i class="bi bi-lightbulb"></i> Навыки</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'vacancies:latest' %}"><i class="bi bi-briefcase"></i> Вакансии</a></li>
+                        {% for page in dynamic_pages %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'page_detail' slug=page.slug %}">
+                                <i class="bi {{ page.menu_icon }}"></i> {{ page.title }}
+                            </a>
+                        </li>
+                        {% endfor %}
                     </ul>
+                    <div class="theme-toggle-container">
+                        <button id="mobileThemeToggle" class="theme-toggle">
+                            <i class="bi bi-sun-fill"></i>
+                            <i class="bi bi-moon-fill"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -176,11 +482,41 @@
         </footer>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'js/main.js' %}"></script>
-    {% block extra_js %}{% endblock %}
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const themeToggles = [document.getElementById('sidebarThemeToggle'), document.getElementById('mobileThemeToggle')];
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark-theme');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-theme');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        if (currentTheme === 'dark') {
+            setTheme('dark');
+        }
+
+        themeToggles.forEach(toggle => {
+            if (toggle) {
+                toggle.addEventListener('click', function() {
+                    const isDark = document.body.classList.contains('dark-theme');
+                    setTheme(isDark ? 'light' : 'dark');
+                });
+            }
+        });
+    });
+    </script> 
+{% block extra_js %} {% endblock %}
 </body>
 </html>

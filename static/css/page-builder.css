@@ -1,0 +1,46 @@
+.page-block {
+    padding: 20px;
+    margin-bottom: 30px;
+    background: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.block-title {
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.gallery img {
+    transition: transform 0.3s;
+}
+
+.gallery img:hover {
+    transform: scale(1.03);
+}
+
+.block-text {
+    line-height: 1.8;
+}
+
+.block-image img {
+    max-height: 500px;
+    object-fit: contain;
+}
+
+.custom-html {
+    overflow-x: auto;
+}
+
+.statistics-block table {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .gallery .col-md-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}

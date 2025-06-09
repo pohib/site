@@ -6,15 +6,6 @@
 
 {% block title %}Навыки C# разработчиков{% endblock %}
 
-{% block breadcrumbs %}
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Навыки</li>
-    </ol>
-</nav>
-{% endblock %}
-
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <style>
@@ -35,10 +26,14 @@
     }
     
     .skill-progress {
-        height: 10px;
-        border-radius: 5px;
+    min-width: 200px;
+    width: 100%;
     }
     
+    .data-table th, .data-table td {
+    padding: 12px 15px;
+    }
+
     .chart-container {
         position: relative;
         height: 350px;
@@ -65,6 +60,82 @@
     
     .search-container {
         margin-bottom: 20px;
+    }
+
+    .progress.skill-progress {
+    height: 20px;
+    border-radius: 10px;
+    background-color: #f0f3f7;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    flex-grow: 1;
+    min-width: 100px;
+    margin-right: 10px;
+    }
+
+    .progress-bar {
+    border-radius: 10px;
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+    transition: width 0.6s ease;
+    position: relative;
+    }
+
+    .progress-bar::after {
+        content: attr(aria-valuenow) "%";
+        position: absolute;
+        right: -40px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #495057;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .percentage-value {
+    min-width: 60px;
+    text-align: right;
+    font-weight: bold;
+    color: #495057;
+    }
+
+    .progress-bar.bg-success {
+        background: linear-gradient(90deg, #2ecc71, #27ae60);
+    }
+
+    .progress-bar.bg-warning {
+        background: linear-gradient(90deg, #f39c12, #e67e22);
+    }
+
+    .progress-bar.bg-info {
+        background: linear-gradient(90deg, #3498db, #2980b9);
+    }
+    
+    @media (max-width: 768px) {
+    .progress.skill-progress {
+        min-width: 90px;
+    }
+    .percentage-value {
+        min-width: 40px;
+        font-size: 0.9rem;
+    }
+    }
+
+    .chart-container {
+        height: {% if chart_settings %}{{ chart_settings.mobile_height }}px{% else %}300px{% endif %};
+        width: {% if chart_settings %}
+            {% if chart_settings.mobile_width <= 100 %}{{ chart_settings.mobile_width }}%{% else %}{{ chart_settings.mobile_width }}px{% endif %}
+        {% else %}100%{% endif %};
+        
+        position: relative;
+        margin: 0 auto;
+    }
+    
+    @media (min-width: 992px) {
+        .chart-container {
+            height: {% if chart_settings %}{{ chart_settings.desktop_height }}px{% else %}500px{% endif %};
+            width: {% if chart_settings %}
+                {% if chart_settings.desktop_width <= 100 %}{{ chart_settings.desktop_width }}%{% else %}{{ chart_settings.desktop_width }}px{% endif %}
+            {% else %}100%{% endif %};
+        }
     }
 </style>
 {% endblock %}
@@ -123,35 +194,35 @@
                             </div>
                         </div>
                     </div>
-                </div>           
+                </div>          
             <div class="table-responsive">
                 <table class="table data-table table-hover">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Навык</th>
-                            <th>Частота</th>
-                            <th>Год</th>
-                            <th>Популярность</th>
+                            <th style="width: 5%;">#</th>
+                            <th style="width: 25%;">Навык</th>
+                            <th style="width: 20%;">Общее количество упоминаний</th>
+                            <th style="width: 20%;">Популярность</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for skill in skills %}
-                        <tr>                          
+                        <tr>
                             <td>{{ skill.position }}</td>
                             <td>{{ skill.name }}</td>
                             <td>{{ skill.count }}</td>
-                            <td>{{ skill.year }}</td>
                             <td>
-                                <div class="progress skill-progress">
-                                    <div class="progress-bar bg-success" 
-                                        role="progressbar" 
-                                        style="width: {{ skill.percentage|dot_format }}%"
-                                        aria-valuenow="{{ skill.percentage }}" 
-                                        aria-valuemin="0" 
-                                        aria-valuemax="100">
-                                        {{ skill.percentage|floatformat:"-2" }}%
+                                <div class="d-flex align-items-center">
+                                    <div class="progress skill-progress flex-grow-1 me-2">
+                                        <div class="progress-bar bg-success" 
+                                            role="progressbar" 
+                                            style="width: {{ skill.percentage|stringformat:'f' }}%"
+                                            aria-valuenow="{{ skill.percentage }}" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="100">
+                                        </div>
                                     </div>
+                                    <span class="percentage-value">{{ skill.percentage|floatformat:"-2" }}%</span>
                                 </div>
                             </td>
                         </tr>
@@ -167,147 +238,173 @@
 {% block extra_js %}
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const topSkillsCtx = document.getElementById('topSkillsChart');
-    new Chart(topSkillsCtx, {
-        type: 'bar',
-        data: {
-            labels: [{% for skill in top_20_skills %}"{{ skill.display_name }}",{% endfor %}],
-            datasets: [{
-                label: 'Количество упоминаний',
-                data: [{% for skill in top_20_skills %}{{ skill.count }},{% endfor %}],
-                backgroundColor: 'rgba(78, 115, 223, 0.7)',
-                borderColor: 'rgba(78, 115, 223, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.parsed.x + ' упоминаний';
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
-                },
-                y: {
-                    ticks: {
-                        autoSkip: false
-                    }
-                }
-            }
-        }
-    });
+(function() {
+    if ($.fn.DataTable.isDataTable('.data-table')) {
+        var table = $('.data-table').DataTable();
+        table.destroy(); 
+    }
 
-    const trendCtx = document.getElementById('skillsTrendChart');
-    new Chart(trendCtx, {
-        type: 'line',
-        data: {
-            labels: [{% for year in years %}"{{ year }}",{% endfor %}],
-            datasets: [
-                {% for skill in top_5_skills %}
-                {
-                    label: '{{ skill.name }}',
-                    data: [{% for count in skill.years %}{{ count }},{% endfor %}],
-                    borderColor: '{{ skill.color }}',
-                    backgroundColor: 'rgba(0, 0, 0, 0)',
-                    borderWidth: 3,
-                    tension: 0.3,
-                    pointRadius: 5,
-                    pointHoverRadius: 7
+    function initCharts() {
+        const topSkillsCtx = document.getElementById('topSkillsChart');
+        if (topSkillsCtx && window.Chart) {
+            new Chart(topSkillsCtx, {
+                type: 'bar',
+                data: {
+                    labels: [{% for skill in top_20_skills %}"{{ skill.name }}",{% endfor %}],
+                    datasets: [{
+                        label: 'Количество упоминаний',
+                        data: [{% for skill in top_20_skills %}{{ skill.count }},{% endfor %}],
+                        backgroundColor: 'rgba(78, 115, 223, 0.7)',
+                        borderColor: 'rgba(78, 115, 223, 1)',
+                        borderWidth: 1
+                    }]
                 },
-                {% endfor %}
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        boxWidth: 20,
-                        padding: 15,
-                        font: {
-                            size: 12
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.x + ' упоминаний';
+                                }
+                            }
                         }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + context.parsed.y + ' упоминаний';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
                     },
-                    grid: {
-                        drawBorder: false
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        },
+                        y: {
+                            ticks: { autoSkip: false }
+                        }
                     }
                 }
+            });
+        }
+
+        const trendCtx = document.getElementById('skillsTrendChart');
+        if (trendCtx && window.Chart) {
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: [{% for year in years %}"{{ year }}",{% endfor %}],
+                    datasets: [
+                        {% for skill in top_5_skills %}
+                        {
+                            label: '{{ skill.name }}',
+                            data: [{% for count in skill.years %}{{ count }},{% endfor %}],
+                            borderColor: '{{ skill.color }}',
+                            backgroundColor: 'rgba(0, 0, 0, 0)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {% endfor %}
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                boxWidth: 20,
+                                padding: 15,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + ' упоминаний';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 },
+                            grid: { drawBorder: false }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+    }
+
+    function initDataTable() {
+        if ($.fn.DataTable.isDataTable('.data-table')) {
+            $('.data-table').DataTable().destroy();
+        }
+
+        var table = $('.data-table').DataTable({
+            order: [[0, 'asc']],
+            pageLength: 25,
+            lengthMenu: [10, 25, 50, 100],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json',
+                search: "",
+                searchPlaceholder: "Поиск...",
+                lengthMenu: "Показать _MENU_ записей",
+                info: "Показано с _START_ по _END_ из _TOTAL_ записей",
+                infoEmpty: "Нет записей для отображения",
+                infoFiltered: "(отфильтровано из _MAX_ записей)",
+                paginate: {
+                    first: "Первая",
+                    last: "Последняя",
+                    next: "Следующая",
+                    previous: "Предыдущая"
+                }
             },
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            }
-        }
-    });
+            dom: '<"top"l>rt<"bottom"ip>',
+            columnDefs: [
+                { orderable: false, targets: [3] },
+                { type: "num", targets: [0, 2] }
+            ]
+        });
 
-    var table = $('.data-table').DataTable({
-        order: [[1, 'asc']],
-        pageLength: 25,
-        lengthMenu: [10, 25, 50, 100],
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
-        },
-        dom: '<"top"lf>rt<"bottom"ip>',
-        initComplete: function() {
-            $('#skillsSearch').on('keyup', function() {
-                table.search(this.value).draw();
-            });
-            
-            $('#clearSearch').on('click', function() {
-                $('#skillsSearch').val('');
-                table.search('').draw();
-            });
-        }
-    });
+        $('#skillsSearch').on('input', function() {
+            table.search(this.value).draw();
+        });
 
-    $('#skillsSearch').on('input', function() {
-        if ($(this).val().length > 0) {
-            $('#clearSearch').removeClass('d-none');
-        } else {
-            $('#clearSearch').addClass('d-none');
-        }
+        $('#clearSearch').on('click', function() {
+            $('#skillsSearch').val('');
+            table.search('').draw();
+        });
+
+        $('#skillsSearch').on('input', function() {
+            $('#clearSearch').toggleClass('d-none', !this.value.trim());
+        });
+    }
+
+    function initTooltips() {
+        $('[data-toggle="tooltip"]').tooltip({
+            placement: 'top',
+            trigger: 'hover'
+        });
+    }
+
+    $(window).on('load', function() {
+        initCharts();
+        initDataTable();
+        initTooltips();
     });
-});
+})();
 </script>
 {% endblock %}
