@@ -129,23 +129,40 @@
 
     .map-controls {
         position: absolute;
-        top: 10px;
+        top: 15px;
         right: 10px;
         z-index: 1000;
-        display: flex;
         flex-direction: column;
         gap: 5px;
     }
     
     .map-control-btn {
+        height: 45px;
         background: white;
         border: 1px solid #ccc;
-        border-radius: 4px;
+        border-radius: 10px;
         padding: 5px 10px;
         cursor: pointer;
         box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         font-size: 12px;
     }
+
+    .dark-theme .map-control-btn {
+        height: 45px;
+        background:rgb(40, 41, 41);
+        border: 1px solid #ccc;
+        border-color: rgb(60, 61, 61);
+        border-radius: 10px;
+        padding: 5px 10px;
+        cursor: pointer;
+        box-shadow: 1px 2px 2px 0px rgb(121 121 121 / 20%);
+        font-size: 12px;
+    }
+
+    .dark-theme .map-control-btn:hover {
+        background:rgb(87, 87, 87);
+    }
+
     
     .map-control-btn:hover {
         background: #f5f5f5;
@@ -159,7 +176,7 @@
         z-index: 1000;
         background: rgba(255,255,255,0.8);
         padding: 10px 20px;
-        border-radius: 4px;
+        border-radius: 12px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         display: none;
     }
@@ -213,17 +230,11 @@
                 {% else %}100%{% endif %};
             }
         }
+    
 </style>
 {% endblock %}
 
 {% block content %}
-<script>
-console.log('Данные для карты:', {
-    map_data: {{ map_data|safe }},
-    salary_by_city: {{ salary_by_city|safe }},
-    vacancy_share_by_city: {{ vacancy_share_by_city|safe }}
-});
-</script>
 <section class="geography-section">
     <div class="row mb-4">
         <div class="col-md-12">
@@ -318,6 +329,13 @@ console.log('Данные для карты:', {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const isDarkTheme = document.body.classList.contains('dark-theme');
+    
+    const textColor = isDarkTheme ? '#ffffff' : '#666';
+    const gridColor = isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    const backgroundColor = isDarkTheme ? 'rgba(100, 162, 235, 0.7)' : 'rgba(54, 162, 235, 0.7)';
+    const borderColor = isDarkTheme ? 'rgba(100, 162, 235, 1)' : 'rgba(54, 162, 235, 1)';
+    
     new Chart(document.getElementById('salaryGeoChart'), {
         type: 'bar',
         data: {
@@ -325,8 +343,8 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 label: 'Средняя зарплата (₽)',
                 data: [{% for city in salary_by_city %}{{ city.average_salary|floatformat:"0" }},{% endfor %}],
-                backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: backgroundColor,
+                borderColor: borderColor,
                 borderWidth: 1
             }]
         },
@@ -335,17 +353,37 @@ document.addEventListener('DOMContentLoaded', function() {
             maintainAspectRatio: {% if chart_settings %}{{ chart_settings.maintain_aspect_ratio|yesno:"true,false" }}{% else %}false{% endif %},
             plugins: {
                 legend: {
-                    display: false
+                    display: false,
+                    labels: {
+                        color: textColor
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Средние зарплаты по городам',
+                    color: textColor
                 }
             },
             scales: {
+                x: {
+                    ticks: {
+                        color: textColor
+                    },
+                    grid: {
+                        color: gridColor
+                    }
+                },
                 y: {
                     beginAtZero: true,
                     suggestedMax: Math.max(...[{% for city in salary_by_city %}{{ city.average_salary|floatformat:"0" }},{% endfor %}]) * 1.2,
                     ticks: {
+                        color: textColor,
                         callback: function(value) {
                             return value.toLocaleString('ru-RU') + ' ₽';
                         }
+                    },
+                    grid: {
+                        color: gridColor
                     }
                 }
             }
@@ -358,12 +396,17 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: [{% for city in vacancy_share_by_city %}"{{ city.city }}",{% endfor %}],
             datasets: [{
                 data: [{% for city in vacancy_share_by_city %}{{ city.vacancy_share|floatformat:"0" }},{% endfor %}],
-                backgroundColor: [
+                backgroundColor: isDarkTheme ? [
+                    '#6e48aa', '#1cc88a', '#36b9cc', '#f6c23e', 
+                    '#e74a3b', '#a8a9b7', '#7a7c8a', '#5a5c69',
+                    '#4a4b55', '#3a3b45'
+                ] : [
                     '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', 
                     '#e74a3b', '#858796', '#5a5c69', '#3a3b45',
                     '#2e59d9', '#17a673'
                 ],
-                hoverBorderColor: "rgba(224, 221, 221, 0.76)",
+                borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                hoverBorderColor: isDarkTheme ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.2)",
             }]
         },
         options: {
@@ -372,13 +415,25 @@ document.addEventListener('DOMContentLoaded', function() {
             plugins: {
                 legend: {
                     position: 'right',
+                    labels: {
+                        color: textColor
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Распределение вакансий по городам',
+                    color: textColor
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
                             return context.raw + "%";
                         }
-                    }
+                    },
+                    bodyColor: isDarkTheme ? '#ffffff' : '#212529',
+                    titleColor: isDarkTheme ? '#ffffff' : '#212529',
+                    backgroundColor: isDarkTheme ? 'rgba(30, 30, 30, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                    borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
                 }
             }
         }
@@ -389,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function initMap() {
         const map = new ymaps.Map('map', {
             center: [55.76, 37.64],
-            zoom: 3,
+            zoom: 10,
             controls: ['zoomControl', 'typeSelector', 'fullscreenControl']
         });
 
@@ -404,7 +459,6 @@ document.addEventListener('DOMContentLoaded', function() {
         controlsContainer.className = 'map-controls';
         controlsContainer.innerHTML = `
             <button class="map-control-btn" id="recenterBtn">Центрировать карту</button>
-            <button class="map-control-btn" id="geocodeBtn">Найти город</button>
         `;
         document.getElementById('map').appendChild(controlsContainer);
 
@@ -456,32 +510,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        document.getElementById('geocodeBtn').addEventListener('click', function() {
-            const cityName = prompt('Введите название города:');
-            if (cityName) {
-                geocodeCity(cityName, function(result) {
-                    if (result.success) {
-                        map.setCenter(result.coordinates, 10, {
-                            checkZoomRange: true
-                        });
-                        const placemark = new ymaps.Placemark(
-                            result.coordinates,
-                            {
-                                balloonContent: result.address,
-                                hintContent: result.address
-                            },
-                            {
-                                preset: 'islands#blueDotIcon'
-                            }
-                        );
-                        map.geoObjects.add(placemark);
-                        console.log(`Метка добавлена для ${cityName}`);
-                    } else {
-                        alert(result.message);
-                    }
-                });
-            }
-        });
 
         const geoObjects = [];
         const citiesToGeocode = [];

@@ -58,6 +58,16 @@
         background-color: #f8f9fa;
     }
     
+    .dark-theme .input-group-text {
+        background-color:rgb(39, 39, 39);
+    }
+
+    .dark-theme .btn-outline-secondary {
+        border-color: #666;
+        color: #e0e0e0;
+        background-color: rgb(39, 39, 39);
+    }
+
     .search-container {
         margin-bottom: 20px;
     }
@@ -88,6 +98,13 @@
         color: #495057;
         font-size: 12px;
         font-weight: bold;
+    }
+
+    .dark-theme .percentage-value {
+    min-width: 60px;
+    text-align: right;
+    font-weight: bold;
+    color:rgb(255, 255, 255);
     }
 
     .percentage-value {
@@ -348,6 +365,13 @@
         }
     }
 
+    function initTooltips() {
+        $('[data-toggle="tooltip"]').tooltip({
+            placement: 'top',
+            trigger: 'hover'
+        });
+    }
+
     function initDataTable() {
         if ($.fn.DataTable.isDataTable('.data-table')) {
             $('.data-table').DataTable().destroy();
@@ -390,13 +414,6 @@
 
         $('#skillsSearch').on('input', function() {
             $('#clearSearch').toggleClass('d-none', !this.value.trim());
-        });
-    }
-
-    function initTooltips() {
-        $('[data-toggle="tooltip"]').tooltip({
-            placement: 'top',
-            trigger: 'hover'
         });
     }
 

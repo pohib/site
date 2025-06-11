@@ -78,6 +78,13 @@
             min-height: 250px;
         }
     }
+
+    .dark-theme #yearSelect {
+    background-color: #474747;
+    border: 1px solid #454647;
+    color: #ffffff;
+    }
+
 </style>
 {% endblock %}
 
@@ -115,7 +122,7 @@
                     </table>
                 </div>
                 <div>
-                    <img src="{{ MEDIA_URL }}charts/salary_by_year.png" alt="Динамика зарплат по годам" class="chart-img img-fluid">
+                    <img src="{{ MEDIA_URL }}charts/salary_by_year.png" alt="Динамика зарплат по годам" class="chart-img img-fluid" id="salaryByYearChart">
                     </div>
                 </div>
             </div>
@@ -151,7 +158,7 @@
                     </table>
                 </div>
                 <div>
-                    <img src="{{ MEDIA_URL }}charts/vacancies_by_year.png" alt="Динамика вакансий по годам" class="chart-img img-fluid">
+                    <img src="{{ MEDIA_URL }}charts/vacancies_by_year.png" alt="Динамика вакансий по годам" class="chart-img img-fluid" id="vacanciesByYearChart">
                 </div>
             </div>
         </div>
@@ -177,7 +184,7 @@
                         <tr>
                             <td>{{ city.city }}</td>
                             <td>{{ city.average_salary|floatformat:2 }}</td>
-                            <td class="{% if city.difference > 0 %}text-success{% else %}text-danger{% endif %}">
+                            <td class="{% if city.difference > 0 %}increase{% else %}danger{% endif %}">
                                 {{ city.difference|floatformat:2 }}%
                             </td>
                         </tr>
@@ -186,7 +193,7 @@
                 </table>
                 </div>
                 <div>
-                    <img src="{{ MEDIA_URL }}charts/salary_by_city.png" alt="Зарплаты по городам" class="chart-img img-fluid">
+                    <img src="{{ MEDIA_URL }}charts/salary_by_city.png" alt="Зарплаты по городам" class="chart-img img-fluid" id="salaryByCityChart">
                 </div>
             </div>
         </div>
@@ -219,7 +226,7 @@
                     </table>
                 </div>
                 <div>
-                    <img src="{{ MEDIA_URL }}charts/vacancy_share_by_city.png" alt="Доля вакансий по городам" class="chart-img img-fluid">
+                    <img src="{{ MEDIA_URL }}charts/vacancy_share_by_city.png" alt="Доля вакансий по городам" class="chart-img img-fluid" id="vacancyShareByCityChart">
                 </div>
             </div>
         </div>
@@ -277,9 +284,39 @@
 {% block extra_js %}
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
-$(function () {
-    console.log("DOM загружен");
+function getCurrentTheme() {
+    return document.documentElement.getAttribute('data-bs-theme') || 'light';
+}
 
+function getChartPath(baseName) {
+    const theme = getCurrentTheme();
+    const suffix = theme === 'dark' ? '_dark' : '';
+    return `/media/charts/${baseName}${suffix}.png?${new Date().getTime()}`;
+}
+
+function updateAllChartsForTheme() {
+    const chartSelectors = [
+        '#salaryByYearChart',
+        '#vacanciesByYearChart',
+        '#salaryByCityChart',
+        '#vacancyShareByCityChart',
+        '#skillsChart'
+    ];
+    
+    chartSelectors.forEach(selector => {
+        const $img = $(selector);
+        if ($img.length) {
+            const currentSrc = $img.attr('src');
+            const baseName = currentSrc.split('/').pop()
+                .replace('_dark.png', '')
+                .replace('.png', '')
+                .split('?')[0];
+            $img.attr('src', getChartPath(baseName));
+        }
+    });
+}
+
+$(document).ready(function() {
     let skillsTable = $('#skillsTable').DataTable({
         responsive: true,
         language: {
@@ -293,10 +330,8 @@ $(function () {
         destroy: true
     });
 
-    $('#yearSelect').on('change', function () {
+    $('#yearSelect').on('change', function() {
         const selectedYear = $(this).val();
-        console.log('Выбран год:', selectedYear);
-
         const chartContainer = $('.chart-container');
         const loadingIndicator = chartContainer.find('.loading-indicator');
         const chartImg = $('#skillsChart');
@@ -304,10 +339,8 @@ $(function () {
         loadingIndicator.show();
         chartImg.hide().removeClass('fade-in');
 
-        const newImageSrc = '/media/charts/top_skills_' + selectedYear + '.png?' + new Date().getTime();
-        console.log('Новая картинка:', newImageSrc);
-
-        const csrftoken = getCookie('csrftoken');
+        const newImageSrc = getChartPath(`top_skills_${selectedYear}`);
+        console.log('Загрузка графика навыков:', newImageSrc);
 
         $.ajax({
             url: window.location.href,
@@ -318,23 +351,22 @@ $(function () {
             },
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': csrftoken
+                'X-CSRFToken': getCookie('csrftoken')
             },
-            success: function (response) {
-                console.log('Успешный AJAX-ответ:', response);
+            success: function(response) {
+                console.log('Данные навыков получены:', response);
 
                 if (response.skills) {
                     skillsTable.destroy();
-                    const tbody = $('#skillsTable tbody');
-                    tbody.empty();
-
-                    response.skills.forEach(function (skill) {
-                        tbody.append(
-                            '<tr>' +
-                            '<td>' + skill.name + '</td>' +
-                            '<td>' + skill.count + '</td>' +
-                            '<td>' + skill.share.toFixed(2) + '%</td>' +
-                            '</tr>'
+                    $('#skillsTable tbody').empty();
+                    
+                    response.skills.forEach(function(skill) {
+                        $('#skillsTable tbody').append(
+                            `<tr>
+                                <td>${skill.name}</td>
+                                <td>${skill.count}</td>
+                                <td>${skill.share.toFixed(2)}%</td>
+                            </tr>`
                         );
                     });
 
@@ -343,35 +375,46 @@ $(function () {
                         language: {
                             url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ru.json'
                         },
-                        pageLength: 5,
                         paging: false,
                         searching: false,
                         info: false,
                         lengthChange: false,
-                        ordering: false,
-                        destroy: true
+                        ordering: false
                     });
 
-                    const newImg = new Image();
-                    newImg.onload = function () {
-                        chartImg.attr('src', newImageSrc);
+                    const img = new Image();
+                    img.onload = function() {
+                        chartImg.attr('src', newImageSrc)
+                            .addClass('fade-in')
+                            .show();
                         loadingIndicator.hide();
-                        chartImg.addClass('fade-in').show();
                     };
-                    newImg.onerror = function () {
-                        console.warn('Не удалось загрузить изображение:', newImageSrc);
+                    img.onerror = function() {
+                        console.error('Ошибка загрузки изображения:', newImageSrc);
                         loadingIndicator.hide();
-                        chartImg.attr('src', newImageSrc).show();
+                        chartImg.show();
                     };
-                    newImg.src = newImageSrc;
+                    img.src = newImageSrc;
                 }
             },
-            error: function (xhr, status, error) {
-                console.error('Ошибка AJAX-запроса:', error);
+            error: function(xhr, status, error) {
+                console.error('Ошибка AJAX:', error);
                 loadingIndicator.hide();
                 chartImg.show();
             }
         });
+    });
+
+    const themeObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.attributeName === 'data-bs-theme') {
+                updateAllChartsForTheme();
+            }
+        });
+    });
+
+    themeObserver.observe(document.documentElement, {
+        attributes: true
     });
 
     function getCookie(name) {
@@ -388,6 +431,8 @@ $(function () {
         }
         return cookieValue;
     }
+
+    updateAllChartsForTheme();
 });
 </script>
 {% endblock %}

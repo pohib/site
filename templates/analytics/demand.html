@@ -9,18 +9,10 @@
         border-left: 4px solid var(--primary-color);
     }
     
-    .salary-change {
+    .bold-text {
         font-weight: bold;
     }
-    
-    .increase {
-        color: var(--success-color);
-    }
-    
-    .decrease {
-        color: var(--danger-color);
-    }
-    
+
     .chart-container {
         height: {% if chart_settings %}{{ chart_settings.mobile_height }}px{% else %}300px{% endif %};
         width: {% if chart_settings %}
@@ -122,7 +114,7 @@
                                 <tr>
                                     <td>{{ item.year }}</td>
                                     <td>{{ item.salary|floatformat:"0" }}</td>
-                                    <td class="salary-change {% if item.change > 0 %}increase{% else %}decrease{% endif %}">
+                                    <td class="bold-text {% if item.change > 0 %}increase{% else %}decrease{% endif %}">
                                         {{ item.change|floatformat:"1" }}%
                                         {% if item.change > 0 %}<i class="bi bi-arrow-up"></i>{% else %}<i class="bi bi-arrow-down"></i>{% endif %}
                                     </td>
@@ -162,7 +154,8 @@
                                 <tr>
                                     <td>{{ item.year }}</td>
                                     <td>{{ item.count }}</td>
-                                    <td>{{ item.share|floatformat:"2" }}%</td>
+                                    <td class="bold-text">
+                                        {{ item.share|floatformat:"2" }}%</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -180,14 +173,56 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const isDarkTheme = document.body.classList.contains('dark-theme');
+    
+    const textColor = isDarkTheme ? '#ffffff' : '#666';
+    const gridColor = isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: {% if chart_settings %}{{ chart_settings.maintain_aspect_ratio|yesno:"true,false" }}{% else %}false{% endif %},
+        plugins: {
+            legend: {
+                labels: {
+                    color: textColor
+                }
+            },
+            title: {
+                display: true,
+                color: textColor
+            }
+        },
+        scales: {
+            x: {
+                ticks: {
+                    color: textColor
+                },
+                grid: {
+                    color: gridColor
+                }
+            },
+            y: {
+                ticks: {
+                    color: textColor
+                },
+                grid: {
+                    color: gridColor
+                }
+            }
+        }
+    };
+
     const salaryData = {
         labels: [{% for item in salary_data %}"{{ item.year }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
         datasets: [{
             label: 'Средняя зарплата (₽)',
             data: [{% for item in salary_data %}{{ item.salary|floatformat:"0" }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-            borderColor: 'rgba(75, 192, 192, 1)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.1
+            borderColor: isDarkTheme ? 'rgba(100, 220, 220, 1)' : 'rgba(75, 192, 192, 1)',
+            backgroundColor: isDarkTheme ? 'rgba(100, 220, 220, 0.2)' : 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1,
+            pointRadius: 5,
+            pointHoverRadius: 8,
+            pointHitRadius: 10
         }]
     };
 
@@ -196,60 +231,70 @@ document.addEventListener('DOMContentLoaded', function() {
         datasets: [{
             label: 'Количество вакансий',
             data: [{% for item in vacancy_data %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: isDarkTheme ? 'rgba(100, 162, 235, 0.5)' : 'rgba(54, 162, 235, 0.5)',
+            borderColor: isDarkTheme ? 'rgba(100, 162, 235, 1)' : 'rgba(54, 162, 235, 1)',
             borderWidth: 1
         }]
+    };
+
+    const salaryOptions = {
+        ...commonOptions,
+        plugins: {
+            ...commonOptions.plugins,
+            title: { 
+                ...commonOptions.plugins.title,
+                text: 'Динамика средних зарплат (₽)' 
+            }
+        },
+        scales: {
+            ...commonOptions.scales,
+            y: {
+                ...commonOptions.scales.y,
+                beginAtZero: false,
+                ticks: {
+                    ...commonOptions.scales.y.ticks,
+                    callback: function(value) {
+                        return value.toLocaleString('ru-RU') + ' ₽';
+                    }
+                }
+            }
+        }
+    };
+
+    const vacancyOptions = {
+        ...commonOptions,
+        plugins: {
+            ...commonOptions.plugins,
+            title: { 
+                ...commonOptions.plugins.title,
+                text: 'Динамика количества вакансий' 
+            }
+        },
+        scales: {
+            ...commonOptions.scales,
+            y: {
+                ...commonOptions.scales.y,
+                beginAtZero: true,
+                ticks: { 
+                    ...commonOptions.scales.y.ticks,
+                    precision: 0 
+                }
+            }
+        }
     };
 
     const salaryCtx = document.getElementById('salaryChart').getContext('2d');
     new Chart(salaryCtx, {
         type: 'line',
-        data: {
-        ...salaryData,
-        datasets: salaryData.datasets.map(dataset => ({
-            ...dataset,
-            pointRadius: 5,
-            pointHoverRadius: 8,
-            pointHitRadius: 10
-        }))
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: {% if chart_settings %}{{ chart_settings.maintain_aspect_ratio|yesno:"true,false" }}{% else %}false{% endif %},
-            plugins: {
-                title: { display: true, text: 'Динамика средних зарплат (₽)' }
-            },
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    ticks: {
-                        callback: function(value) {
-                            return value.toLocaleString('ru-RU') + ' ₽';
-                        }
-                    }
-                }
-            }
-        }
+        data: salaryData,
+        options: salaryOptions
     });
 
     const vacancyCtx = document.getElementById('vacancyChart').getContext('2d');
     new Chart(vacancyCtx, {
         type: 'bar',
         data: vacancyData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: {% if chart_settings %}{{ chart_settings.maintain_aspect_ratio|yesno:"true,false" }}{% else %}false{% endif %},
-            plugins: {
-                title: { display: true, text: 'Динамика количества вакансий' }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { precision: 0 }
-                }
-            }
-        }
+        options: vacancyOptions
     });
 });
 </script>

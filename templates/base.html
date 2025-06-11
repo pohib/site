@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
-    <style>        
+    <style>
         .sidebar {
             position: fixed;
             top: 0;
@@ -163,18 +163,36 @@
             border-bottom-color: #333;
         }
 
-        .dark-theme .table {
-            color: #101010;
+        [data-bs-theme="dark"] .table {
+            --bs-table-bg: #1e1e1e;
+            --bs-table-color: #e0e0e0;
+            --bs-table-striped-bg: #1a1a1a;
+            --bs-table-striped-color: #e0e0e0;
+            --bs-table-active-bg: #2a2a2a;
+            --bs-table-active-color: #ffffff;
+            --bs-table-hover-bg:rgb(22, 22, 22);
+            --bs-table-hover-color: #ffffff;
         }
+        
+
 
         .dark-theme .table th,
         .dark-theme .table td {
-            border-color: #101010;
+            --bs-table-bg: #1e1e1e;
+            --bs-table-color: #ffffff;
+        }
+
+        .dark-theme .table thead th {
+            --bs-table-bg: #1e1e1e;
+            --bs-table-color: #ffffff;
+            background-color: var(--bs-table-bg);
+            color: var(--bs-table-color);
+            border-bottom-color: #444;
         }
 
         .dark-theme .table-hover tbody tr:hover {
-            background-color: #131212;
-            color: #fff;
+            --bs-table-bg: #333;
+            --bs-table-color: #fff;
         }
 
         .dark-theme .site-footer {
@@ -283,7 +301,7 @@
         }
 
         .theme-toggle .bi-sun-fill {
-            left: 8px;
+            left: 16px;
             opacity: 1;
             color: #ffc107;
         }
@@ -392,6 +410,22 @@
         .dark-theme .theme-toggle-container .sidebar-text {
             color: rgba(255, 255, 255, 0.8); 
         }
+
+        .increase {
+        color: var(--success-color) !important;
+        }
+        
+        .decrease {
+            color: var(--danger-color) !important;
+        }
+        
+        .dark-theme .increase {
+            color: #4ade80 !important;
+        }
+        
+        .dark-theme .decrease {
+            color: #f87171 !important;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -426,7 +460,6 @@
                 <i class="bi bi-sun-fill"></i>
                 <i class="bi bi-moon-fill"></i>
             </button>
-            <span class="sidebar-text" style="margin-left: 10px;">Тема</span>
         </div>
     </aside>
 
@@ -488,35 +521,69 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'js/main.js' %}"></script>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const themeToggles = [document.getElementById('sidebarThemeToggle'), document.getElementById('mobileThemeToggle')];
-        const currentTheme = localStorage.getItem('theme') || 'light';
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateChartsTheme(isDark) {
+        const textColor = isDark ? '#ffffff' : '#666';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
         
-        function setTheme(theme) {
-            if (theme === 'dark') {
-                document.body.classList.add('dark-theme');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.body.classList.remove('dark-theme');
-                localStorage.setItem('theme', 'light');
-            }
+        Chart.helpers.each(Chart.instances, function(chart) {
+            chart.options.plugins.title.color = textColor;
+            chart.options.plugins.legend.labels.color = textColor;
+            
+            chart.options.scales.x.ticks.color = textColor;
+            chart.options.scales.x.grid.color = gridColor;
+            
+            chart.options.scales.y.ticks.color = textColor;
+            chart.options.scales.y.grid.color = gridColor;
+            
+            chart.update();
+        });
+    }
+    const themeToggles = [
+        document.getElementById('sidebarThemeToggle'),
+        document.getElementById('mobileThemeToggle')
+    ].filter(Boolean);
+    
+    function setTheme(theme) {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-theme');
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            updateChartsTheme(document.body.classList.contains('dark-theme'));
+        } else {
+            document.body.classList.remove('dark-theme');
+            document.documentElement.setAttribute('data-bs-theme', 'light');
+            localStorage.setItem('theme', 'light');
+            updateChartsTheme(document.body.classList.contains('light-theme'));
         }
+        updateToggleButtons();
+    }
 
-        if (currentTheme === 'dark') {
-            setTheme('dark');
-        }
-
+    function updateToggleButtons() {
+        const isDark = document.body.classList.contains('dark-theme');
         themeToggles.forEach(toggle => {
             if (toggle) {
-                toggle.addEventListener('click', function() {
-                    const isDark = document.body.classList.contains('dark-theme');
-                    setTheme(isDark ? 'light' : 'dark');
-                });
+                toggle.querySelector('.bi-sun-fill').style.opacity = isDark ? '0' : '1';
+                toggle.querySelector('.bi-moon-fill').style.opacity = isDark ? '1' : '0';
             }
         });
+    }
+
+    const currentTheme = localStorage.getItem('theme') || 
+                    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    setTheme(currentTheme);
+
+    themeToggles.forEach(toggle => {
+        if (toggle) {
+            toggle.addEventListener('click', function() {
+                const isDark = document.body.classList.contains('dark-theme');
+                setTheme(isDark ? 'light' : 'dark');
+            });
+        }
     });
-    </script> 
+});
+</script>
 {% block extra_js %} {% endblock %}
 </body>
 </html>

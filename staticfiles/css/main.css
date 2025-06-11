@@ -5,6 +5,7 @@
     --danger-color: #dc3545;
     --light-color: #f8f9fa;
     --dark-color: #343a40;
+    color-scheme: light dark;
 }
 
 body {
@@ -69,7 +70,15 @@ body {
 
 .table th {
     font-weight: 600;
-    background-color: #f8f9fa;
+    background-color: var(--bs-table-bg);
+}
+
+[data-bs-theme="light"] .table th {
+    background-color: var(--bs-table-bg);
+}
+
+[data-bs-theme="dark"] .table th {
+    background-color: var(--bs-table-bg);
 }
 
 .chart-container {
@@ -161,3 +170,9 @@ body {
     background-color: #4e73df;
     transition: width 0.3s ease;
 }
+
+
+.table>:not(caption)>*>*:not(.increase):not(.decrease):not(.text-success):not(.text-danger) {
+    color: var(--bs-table-color-state, var(--bs-table-color-type, var(--bs-table-color)));
+}
+
