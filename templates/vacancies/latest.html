@@ -10,7 +10,7 @@
         border-left: 4px solid #4e73df;
         margin-bottom: 20px;
     }
-    
+
     .vacancy-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.1);
@@ -32,6 +32,28 @@
         border: 1px solid #ddd;
     }
     
+    .dark-theme .skill-tag {
+        display: inline-block;
+        background-color: #494949;
+        border-radius: 50px;
+        padding: 0.25em 0.75em;
+        margin: 0.2em;
+        font-size: 0.85rem;
+        color: #ffffff;
+        border: 1px solid #585858;
+        font-weight: 500;
+    }
+
+    .dark-theme .text-muted {
+        --bs-text-opacity: 1;
+        color: rgba(255, 255, 255, 0.777) !important;
+    }
+
+    .dark-theme .form-select {
+        color: #ffffff;
+        background-color: #232323;
+    }
+
     .company-logo {
         width: 60px;
         height: 60px;
@@ -39,17 +61,33 @@
         border-radius: 4px;
         margin-right: 15px;
     }
-    
+
     .sort-controls {
         background-color: #f8f9fa;
         padding: 15px;
         border-radius: 5px;
         margin-bottom: 20px;
     }
+
+    .dark-theme .sort-controls {
+        background-color: #11111100;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
+    .dark-theme .btn.active {
+        background-color: #313131;
+    }
     
+    .dark-theme .btn-outline-secondary {
+        --bs-btn-hover-bg: #515253;
+    }
+
     .sort-icon {
         margin-left: 5px;
     }
+    
 </style>
 {% endblock %}
 

@@ -230,7 +230,14 @@
                 {% else %}100%{% endif %};
             }
         }
-    
+        
+        .dark-theme .element.style {
+        background: #1e1e1e;
+        padding: 10px;
+        color: white;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
 </style>
 {% endblock %}
 
@@ -329,117 +336,128 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const isDarkTheme = document.body.classList.contains('dark-theme');
-    
-    const textColor = isDarkTheme ? '#ffffff' : '#666';
-    const gridColor = isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-    const backgroundColor = isDarkTheme ? 'rgba(100, 162, 235, 0.7)' : 'rgba(54, 162, 235, 0.7)';
-    const borderColor = isDarkTheme ? 'rgba(100, 162, 235, 1)' : 'rgba(54, 162, 235, 1)';
-    
-    new Chart(document.getElementById('salaryGeoChart'), {
-        type: 'bar',
-        data: {
-            labels: [{% for city in salary_by_city %}"{{ city.city }}",{% endfor %}],
-            datasets: [{
-                label: 'Средняя зарплата (₽)',
-                data: [{% for city in salary_by_city %}{{ city.average_salary|floatformat:"0" }},{% endfor %}],
-                backgroundColor: backgroundColor,
-                borderColor: borderColor,
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: {% if chart_settings %}{{ chart_settings.maintain_aspect_ratio|yesno:"true,false" }}{% else %}false{% endif %},
-            plugins: {
-                legend: {
-                    display: false,
-                    labels: {
-                        color: textColor
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Средние зарплаты по городам',
-                    color: textColor
-                }
-            },
-            scales: {
-                x: {
-                    ticks: {
-                        color: textColor
-                    },
-                    grid: {
-                        color: gridColor
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    suggestedMax: Math.max(...[{% for city in salary_by_city %}{{ city.average_salary|floatformat:"0" }},{% endfor %}]) * 1.2,
-                    ticks: {
-                        color: textColor,
-                        callback: function(value) {
-                            return value.toLocaleString('ru-RU') + ' ₽';
-                        }
-                    },
-                    grid: {
-                        color: gridColor
-                    }
-                }
-            }
-        }
-    });
+    let salaryGeoChart = null;
+    let vacancyGeoChart = null;
 
-    new Chart(document.getElementById('vacancyGeoChart'), {
-        type: 'doughnut',
-        data: {
-            labels: [{% for city in vacancy_share_by_city %}"{{ city.city }}",{% endfor %}],
-            datasets: [{
-                data: [{% for city in vacancy_share_by_city %}{{ city.vacancy_share|floatformat:"0" }},{% endfor %}],
-                backgroundColor: isDarkTheme ? [
-                    '#6e48aa', '#1cc88a', '#36b9cc', '#f6c23e', 
-                    '#e74a3b', '#a8a9b7', '#7a7c8a', '#5a5c69',
-                    '#4a4b55', '#3a3b45'
-                ] : [
-                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', 
-                    '#e74a3b', '#858796', '#5a5c69', '#3a3b45',
-                    '#2e59d9', '#17a673'
-                ],
-                borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-                hoverBorderColor: isDarkTheme ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.2)",
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: {% if chart_settings %}{{ chart_settings.maintain_aspect_ratio|yesno:"true,false" }}{% else %}false{% endif %},
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        color: textColor
-                    }
+    function initCharts() {
+        const isDarkTheme = document.body.classList.contains('dark-theme');
+        const textColor = isDarkTheme ? '#ffffff' : '#666';
+        const gridColor = isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        const bgColor = isDarkTheme ? 'rgba(100, 162, 235, 0.7)' : 'rgba(54, 162, 235, 0.7)';
+        const borderColor = isDarkTheme ? 'rgba(100, 162, 235, 1)' : 'rgba(54, 162, 235, 1)';
+
+        const salaryGeoCtx = document.getElementById('salaryGeoChart');
+        if (salaryGeoCtx) {
+            if (salaryGeoChart) salaryGeoChart.destroy();
+            
+            salaryGeoChart = new Chart(salaryGeoCtx, {
+                type: 'bar',
+                data: {
+                    labels: [{% for city in salary_by_city %}"{{ city.city }}",{% endfor %}],
+                    datasets: [{
+                        label: 'Средняя зарплата (₽)',
+                        data: [{% for city in salary_by_city %}{{ city.average_salary|floatformat:"0" }},{% endfor %}],
+                        backgroundColor: bgColor,
+                        borderColor: borderColor,
+                        borderWidth: 1
+                    }]
                 },
-                title: {
-                    display: true,
-                    text: 'Распределение вакансий по городам',
-                    color: textColor
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.raw + "%";
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + ' ₽';
+                                }
+                            }
                         }
                     },
-                    bodyColor: isDarkTheme ? '#ffffff' : '#212529',
-                    titleColor: isDarkTheme ? '#ffffff' : '#212529',
-                    backgroundColor: isDarkTheme ? 'rgba(30, 30, 30, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-                    borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: textColor,
+                                callback: function(value) {
+                                    return value.toLocaleString('ru-RU') + ' ₽';
+                                }
+                            },
+                            grid: { color: gridColor }
+                        },
+                        x: {
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        }
+                    }
                 }
-            }
+            });
+        }
+
+        const vacancyGeoCtx = document.getElementById('vacancyGeoChart');
+        if (vacancyGeoCtx) {
+            if (vacancyGeoChart) vacancyGeoChart.destroy();
+            
+            vacancyGeoChart = new Chart(vacancyGeoCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [{% for city in vacancy_share_by_city %}"{{ city.city }}",{% endfor %}],
+                    datasets: [{
+                        data: [{% for city in vacancy_share_by_city %}{{ city.vacancy_share|floatformat:"0" }},{% endfor %}],
+                        backgroundColor: isDarkTheme ? [
+                            '#6e48aa', '#1cc88a', '#36b9cc', '#f6c23e', 
+                            '#e74a3b', '#a8a9b7', '#7a7c8a', '#5a5c69',
+                            '#4a4b55', '#3a3b45'
+                        ] : [
+                            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', 
+                            '#e74a3b', '#858796', '#5a5c69', '#3a3b45',
+                            '#2e59d9', '#17a673'
+                        ],
+                        borderColor: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                        hoverBorderColor: isDarkTheme ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.2)",
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: textColor }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw + "%";
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    function updateTheme() {
+        initCharts();
+    }
+
+    initCharts();
+    ymaps.ready(initMap);
+
+    const themeToggles = [
+        document.getElementById('sidebarThemeToggle'),
+        document.getElementById('mobileThemeToggle')
+    ].filter(Boolean);
+
+    themeToggles.forEach(toggle => {
+        if (toggle) {
+            toggle.addEventListener('click', function() {
+                setTimeout(updateTheme, 100);
+            });
         }
     });
-    
-    ymaps.ready(initMap);
 
     function initMap() {
         const map = new ymaps.Map('map', {
@@ -742,7 +760,6 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         document.getElementById('map').appendChild(legend);
     }
-
 });
 </script>
 {% endblock %}

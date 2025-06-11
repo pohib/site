@@ -258,23 +258,82 @@
 
 <script>
 (function() {
-    if ($.fn.DataTable.isDataTable('.data-table')) {
-        var table = $('.data-table').DataTable();
-        table.destroy(); 
+    let topSkillsChart = null;
+    let skillsTrendChart = null;
+
+    function safeUpdateChartTheme(chart, isDark) {
+        if (!chart || chart.destroyed) return;
+        
+        try {
+            const textColor = isDark ? '#ffffff' : '#666';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            const bgColor = isDark ? 'rgba(30, 30, 30, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+
+            if (chart.options.scales) {
+                if (chart.options.scales.x) {
+                    chart.options.scales.x.ticks.color = textColor;
+                    chart.options.scales.x.grid.color = gridColor;
+                }
+                if (chart.options.scales.y) {
+                    chart.options.scales.y.ticks.color = textColor;
+                    chart.options.scales.y.grid.color = gridColor;
+                }
+            }
+
+            if (chart.options.plugins) {
+                if (chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+                    chart.options.plugins.legend.labels.color = textColor;
+                }
+                if (chart.options.plugins.tooltip) {
+                    chart.options.plugins.tooltip.backgroundColor = bgColor;
+                    chart.options.plugins.tooltip.bodyColor = textColor;
+                    chart.options.plugins.tooltip.titleColor = textColor;
+                }
+            }
+
+            if (chart.config.type === 'bar' && chart.data.datasets) {
+                chart.data.datasets.forEach(dataset => {
+                    dataset.backgroundColor = isDark ? 'rgba(100, 162, 235, 0.7)' : 'rgba(78, 115, 223, 0.7)';
+                    dataset.borderColor = isDark ? 'rgba(100, 162, 235, 1)' : 'rgba(78, 115, 223, 1)';
+                });
+            }
+
+            chart.update();
+        } catch (e) {
+            console.error('Ошибка при обновлении темы графиков:', e);
+            destroyAndRecreateCharts();
+        }
+    }
+
+    function destroyAndRecreateCharts() {
+        if (topSkillsChart) {
+            topSkillsChart.destroy();
+            topSkillsChart = null;
+        }
+        if (skillsTrendChart) {
+            skillsTrendChart.destroy();
+            skillsTrendChart = null;
+        }
+        initCharts();
     }
 
     function initCharts() {
+        const isDark = document.body.classList.contains('dark-theme');
+        const textColor = isDark ? '#ffffff' : '#666';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        const bgColor = isDark ? 'rgba(30, 30, 30, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+
         const topSkillsCtx = document.getElementById('topSkillsChart');
         if (topSkillsCtx && window.Chart) {
-            new Chart(topSkillsCtx, {
+            topSkillsChart = new Chart(topSkillsCtx, {
                 type: 'bar',
                 data: {
                     labels: [{% for skill in top_20_skills %}"{{ skill.name }}",{% endfor %}],
                     datasets: [{
                         label: 'Количество упоминаний',
                         data: [{% for skill in top_20_skills %}{{ skill.count }},{% endfor %}],
-                        backgroundColor: 'rgba(78, 115, 223, 0.7)',
-                        borderColor: 'rgba(78, 115, 223, 1)',
+                        backgroundColor: isDark ? 'rgba(100, 162, 235, 0.7)' : 'rgba(78, 115, 223, 0.7)',
+                        borderColor: isDark ? 'rgba(100, 162, 235, 1)' : 'rgba(78, 115, 223, 1)',
                         borderWidth: 1
                     }]
                 },
@@ -285,6 +344,9 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            backgroundColor: bgColor,
+                            bodyColor: textColor,
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
                             callbacks: {
                                 label: function(context) {
                                     return context.parsed.x + ' упоминаний';
@@ -295,10 +357,22 @@
                     scales: {
                         x: {
                             beginAtZero: true,
-                            ticks: { precision: 0 }
+                            ticks: { 
+                                precision: 0,
+                                color: textColor
+                            },
+                            grid: {
+                                color: gridColor
+                            }
                         },
                         y: {
-                            ticks: { autoSkip: false }
+                            ticks: { 
+                                autoSkip: false,
+                                color: textColor
+                            },
+                            grid: {
+                                color: gridColor
+                            }
                         }
                     }
                 }
@@ -307,7 +381,7 @@
 
         const trendCtx = document.getElementById('skillsTrendChart');
         if (trendCtx && window.Chart) {
-            new Chart(trendCtx, {
+            skillsTrendChart = new Chart(trendCtx, {
                 type: 'line',
                 data: {
                     labels: [{% for year in years %}"{{ year }}",{% endfor %}],
@@ -321,7 +395,8 @@
                             borderWidth: 3,
                             tension: 0.3,
                             pointRadius: 5,
-                            pointHoverRadius: 7
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: isDark ? '#ffffff' : '{{ skill.color }}'
                         },
                         {% endfor %}
                     ]
@@ -333,12 +408,16 @@
                         legend: {
                             position: 'top',
                             labels: {
+                                color: textColor,
                                 boxWidth: 20,
                                 padding: 15,
                                 font: { size: 12 }
                             }
                         },
                         tooltip: {
+                            backgroundColor: bgColor,
+                            bodyColor: textColor,
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
                             callbacks: {
                                 label: function(context) {
                                     return context.dataset.label + ': ' + context.parsed.y + ' упоминаний';
@@ -349,11 +428,23 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: { precision: 0 },
-                            grid: { drawBorder: false }
+                            ticks: { 
+                                precision: 0,
+                                color: textColor
+                            },
+                            grid: { 
+                                color: gridColor,
+                                drawBorder: false
+                            }
                         },
                         x: {
-                            grid: { display: false }
+                            grid: { 
+                                display: false,
+                                color: gridColor
+                            },
+                            ticks: {
+                                color: textColor
+                            }
                         }
                     },
                     interaction: {
@@ -421,6 +512,23 @@
         initCharts();
         initDataTable();
         initTooltips();
+
+        const themeToggles = [
+            document.getElementById('sidebarThemeToggle'),
+            document.getElementById('mobileThemeToggle')
+        ].filter(Boolean);
+        
+        themeToggles.forEach(toggle => {
+            if (toggle) {
+                toggle.addEventListener('click', function() {
+                    setTimeout(() => {
+                        const isDark = document.body.classList.contains('dark-theme');
+                        safeUpdateChartTheme(topSkillsChart, isDark);
+                        safeUpdateChartTheme(skillsTrendChart, isDark);
+                    }, 100);
+                });
+            }
+        });
     });
 })();
 </script>
