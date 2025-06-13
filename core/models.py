@@ -5,8 +5,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
 from django_ckeditor_5.fields import CKEditor5Field
-from adminsortable.models import SortableMixin
-from adminsortable.fields import SortableForeignKey
+from django.contrib.auth.models import User
 
 class Page(models.Model):
     title = models.CharField(_('Заголовок'), max_length=200)
@@ -132,3 +131,20 @@ class Statistic(models.Model):
 
     def __str__(self):
         return self.title
+    
+
+class Feedback(models.Model):
+    name = models.CharField(_('Имя'), max_length=100)
+    email = models.EmailField(_('Email'))
+    message = models.TextField(_('Сообщение'))
+    created_at = models.DateTimeField(_('Дата создания'), auto_now_add=True)
+    is_processed = models.BooleanField(_('Обработано'), default=False)
+
+    class Meta:
+        verbose_name = _('обратную связь')
+        verbose_name_plural = _('Обратная связь')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Сообщение от {self.name} ({self.email})'
+    

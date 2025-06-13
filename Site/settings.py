@@ -25,9 +25,36 @@ INSTALLED_APPS = [
     'vacancies',
     'django_ckeditor_5',
     'adminsortable',
+    'django_recaptcha',
+    'django.contrib.sites',
+    'users',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.github',
+    'allauth.socialaccount.providers.vk',
+    'allauth.socialaccount.providers.telegram',
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
+SITE_ID = 1
+
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'  
+ACCOUNT_LOGIN_REDIRECT_URL = '/'
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+SOCIALACCOUNT_AUTO_SIGNUP = True 
+
+
+RECAPTCHA_PUBLIC_KEY = '6LfBTF8rAAAAAMP4Gd56VKGGI4wJxXyC8R6GYJ2p'
+RECAPTCHA_PRIVATE_KEY = '6LfBTF8rAAAAANXxW53dCI4z3otqihAl_kT7iJIM'
 
 CKEDITOR_5_CONFIGS = {
     'default': {
@@ -107,6 +134,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'Site.urls'
@@ -201,3 +229,20 @@ LOGGING = {
         'level': 'DEBUG',
     },
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'vedenyov10@gmail.com'
+EMAIL_HOST_PASSWORD = 'wsiw piwu szpa vbnx'
+DEFAULT_FROM_EMAIL = 'vedenyov10@gmail.com'
+
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
+ACCOUNT_EMAIL_SUBJECT_PREFIX = "127.0.0.1"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
+
+
+ACCOUNT_EMAIL_CONFIRMATION_TEMPLATE = "users/account/email/email_confirmation_message.html"
+ACCOUNT_EMAIL_CONFIRMATION_SUBJECT = "users/account/email/email_confirmation_subject.txt"
+

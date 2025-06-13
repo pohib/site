@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="bi bi-pencil-square me-2"></i>Редактирование профиля</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Фото профиля</label>
+                            <input type="file" name="avatar" class="form-control" id="id_avatar">
+                            {% if user.profile.avatar %}
+                                <div class="mt-2">
+                                    <img src="{{ user.profile.avatar.url }}" width="100" class="img-thumbnail">
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" name="avatar-clear" id="avatar-clear">
+                                        <label class="form-check-label" for="avatar-clear">Удалить текущее фото</label>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">О себе</label>
+                            <textarea name="bio" class="form-control" rows="3">{{ user.profile.bio }}</textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'users:profile' %}" class="btn btn-secondary me-md-2">
+                                <i class="bi bi-x-circle me-1"></i>Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>Сохранить
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

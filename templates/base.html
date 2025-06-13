@@ -1,4 +1,5 @@
 {% load static %}
+{% load socialaccount %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -424,6 +425,204 @@
         .dark-theme .decrease {
             color: #f87171 !important;
         }
+
+        .site-footer .form-control {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .site-footer .form-control:focus {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.1);
+        }
+
+        .site-footer .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .dark-theme .site-footer .form-control {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark-theme .site-footer .form-control:focus {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .g-recaptcha > div {
+            margin: 0 auto;
+        }
+
+        .modal-content {
+            background-color: #fff;
+        }
+
+        .dark-theme .modal-content {
+            background-color: #2d2d2d;
+            color: #fff;
+        }
+
+        .dark-theme .modal-header {
+            border-bottom-color: #444;
+        }
+
+        .dark-theme .modal-footer {
+            border-top-color: #444;
+        }
+
+        .g-recaptcha {
+            display: inline-block;
+            margin: 15px auto;
+        }
+
+        .site-header {
+            background: linear-gradient(135deg, 
+                #9abac5 0%, 
+                #7da4fd 25%, 
+                #9268fc 50%, 
+                #ff7cde 75%, 
+                #74a7b9 100%);
+            background-size: 400% 400%;
+            animation: gradientFlow 15s ease infinite;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+
+        .logo-text h1 {
+            color: #f8f9fa;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
+                        0 0 10px rgba(61, 58, 58, 0.8);
+        }
+
+        .logo-text p {
+            color: #e9ecef;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05),
+                        0 0 8px rgba(255, 255, 255, 0.6);
+            font-weight: bold;
+        }
+
+        .dark-theme .site-header {
+            background: linear-gradient(135deg, 
+                #3a2846 0%, 
+                #2a1a1a 25%, 
+                #1a1423 50%, 
+                #3a5d63 75%, 
+                #4a3131 100%);
+            background-size: 400% 400%;
+            animation: gradientFlow 15s ease infinite;
+            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1),
+                        0 0 0 1px rgba(255, 255, 255, 0.05),
+                        inset 0 0 30px rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        .dark-theme .site-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.03) 0%, 
+                rgba(255, 255, 255, 0.01) 50%, 
+                rgba(255, 255, 255, 0.03) 100%);
+            pointer-events: none;
+        }
+        
+        .dark-theme .logo-text h1 {
+            color: #f8f9fa;
+            text-shadow: 0 2px 8px rgba(255, 255, 255, 0.2),
+                        0 0 16px rgba(255, 255, 255, 0.1);
+        }
+
+        .dark-theme .logo-text p {
+            color: #e9ecef;
+            text-shadow: 0 1px 4px rgba(255, 255, 255, 0.15);
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+
+        .auth-buttons {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .auth-buttons .dropdown-toggle {
+            display: flex;
+            align-items: center;
+        }
+
+        .social-auth-btn {
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-google {
+            background-color: #DB4437;
+        }
+
+        .btn-github {
+            background-color: #333;
+        }
+
+        .btn-vk {
+            background-color: #4a76a8;
+        }
+
+        @media (max-width: 767.98px) {
+            .auth-buttons {
+                display: none;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .logo-text {
+                margin-top: 10px;
+            }
+        }
+
+        .dark-theme .auth-buttons .btn-outline-light {
+            color: rgba(255, 255, 255, 0.8);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .dark-theme .auth-buttons .btn-outline-light:hover {
+            color: #000;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .dark-theme .auth-buttons .btn-light {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #000;
+        }
+
+        .dark-theme .auth-buttons .btn-light:hover {
+            background-color: rgba(255, 255, 255, 1);
+        }
     </style>
 {% block extra_css %}{% endblock %}
 </head>
@@ -438,6 +637,41 @@
                         <p>Аналитика рынка труда для C# разработчиков</p>
                     </div>
                 </a>
+                <div class="auth-buttons">
+                    {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle me-1"></i>
+                            {{ user.username }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'users:profile' %}">
+                                <i class="bi bi-person me-2"></i>Профиль
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'account_logout' %}">
+                                <i class="bi bi-box-arrow-right me-2"></i>Выйти
+                            </a></li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="d-flex gap-2 align-items-center">
+                        <a href="{% provider_login_url 'google' %}" class="social-auth-btn btn-google" title="Войти через Google">
+                            <i class="bi bi-google"></i>
+                        </a>
+                        <a href="{% provider_login_url 'github' %}" class="social-auth-btn btn-github" title="Войти через GitHub">
+                            <i class="bi bi-github"></i>
+                        </a>
+                        <div class="vr"></div>
+                        <a href="{% url 'account_login' %}" class="btn btn-outline-light">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Войти
+                        </a>
+                        <a href="{% url 'account_signup' %}" class="btn btn-light">
+                            <i class="bi bi-person-plus me-1"></i>Регистрация
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </header>
@@ -486,7 +720,16 @@
                 </div>
             </div>
         </nav>
-
+            {% if messages %}
+                <div class="container mt-3">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
         <main class="container my-4">
             {% block breadcrumbs %}{% endblock %}
             {% block content %}{% endblock %}
@@ -495,15 +738,33 @@
         <footer class="site-footer bg-dark text-white py-4">
             <div class="container">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <h5>О проекте</h5>
                         <p>Аналитический портал для C# разработчиков. Анализ рынка труда, требований работодателей и тенденций развития.</p>
                     </div>
-                    <div class="col-md-6 text-md-end">
+                    <div class="col-md-4">
                         <h5>Контакты</h5>
                         <p>Веденев Игорь Алексеевич</p>
                         <p>РИ-231003</p>
-                        <p><a href="mailto:vedenyov10@gmail.com" class="text-white">vedenyov10@gmail.com</a></p>
+                    </div>
+                    <div class="col-md-4">
+                        <h5>Обратная связь</h5>
+                        <form id="feedbackForm" method="post" action="{% url 'contact' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <input type="text" class="form-control" name="name" placeholder="Ваше имя" required>
+                                <div class="invalid-feedback" id="nameError"></div>
+                            </div>
+                            <div class="mb-3">
+                                <input type="email" class="form-control" name="email" placeholder="Email" required>
+                                <div class="invalid-feedback" id="emailError"></div>
+                            </div>
+                            <div class="mb-3">
+                                <textarea class="form-control" name="message" rows="2" placeholder="Сообщение" required></textarea>
+                                <div class="invalid-feedback" id="messageError"></div>
+                            </div>
+                            <button type="button" class="btn btn-primary" id="submitBtn">Отправить</button>
+                        </form>
                     </div>
                 </div>
                 <div class="text-center mt-3">
@@ -511,6 +772,37 @@
                 </div>
             </div>
         </footer>
+
+        <div class="modal fade" id="captchaModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Подтвердите, что вы не робот</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}" data-callback="onCaptchaSuccess"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">Отправлено</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Спасибо за обратную связь.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -518,6 +810,7 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'js/main.js' %}"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -580,8 +873,115 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+
+    document.getElementById('submitBtn').addEventListener('click', function() {
+        const form = document.getElementById('feedbackForm');
+        
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+        
+        let isValid = true;
+        const name = form.elements.name.value.trim();
+        const email = form.elements.email.value.trim();
+        const message = form.elements.message.value.trim();
+        
+        if (!name) {
+            form.elements.name.classList.add('is-invalid');
+            document.getElementById('nameError').textContent = 'Введите ваше имя';
+            isValid = false;
+        }
+        
+        if (!email) {
+            form.elements.email.classList.add('is-invalid');
+            document.getElementById('emailError').textContent = 'Введите email';
+            isValid = false;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            form.elements.email.classList.add('is-invalid');
+            document.getElementById('emailError').textContent = 'Введите корректный email';
+            isValid = false;
+        }
+        
+        if (!message) {
+            form.elements.message.classList.add('is-invalid');
+            document.getElementById('messageError').textContent = 'Введите сообщение';
+            isValid = false;
+        }
+        
+        if (isValid) {
+            const captchaModal = new bootstrap.Modal(document.getElementById('captchaModal'));
+            captchaModal.show();
+        }
+    });
 });
+
+function onCaptchaSuccess(token) {
+        const captchaModal = bootstrap.Modal.getInstance(document.getElementById('captchaModal'));
+        captchaModal.hide();
+        
+        const form = document.getElementById('feedbackForm');
+        const formData = new FormData(form);
+        formData.append('g-recaptcha-response', token);
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                successModal.show();
+                form.reset();
+            } else {
+                if (data.errors) {
+                    for (const [field, error] of Object.entries(data.errors)) {
+                        const input = form.elements[field];
+                        if (input) {
+                            input.classList.add('is-invalid');
+                            const errorElement = document.getElementById(`${field}Error`);
+                            if (errorElement) {
+                                errorElement.textContent = error.join(' ');
+                            }
+                        }
+                    }
+                } else {
+                    alert(data.error || 'Произошла ошибка при отправке');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Произошла ошибка при отправке формы');
+        });
+    }
+
+    window.addEventListener('scroll', function() {
+        const header = document.querySelector('.site-header');
+        const scrollPosition = window.pageYOffset;
+        header.style.backgroundPosition = `0% ${50 + scrollPosition * 0.1}%`;
+    });
 </script>
 {% block extra_js %} {% endblock %}
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-box-arrow-right me-2"></i>Подтверждение выхода</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Вы действительно хотите выйти из системы?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <a href="{% url 'account_logout' %}" class="btn btn-danger">Выйти</a>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
