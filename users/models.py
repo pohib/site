@@ -13,15 +13,17 @@ class Profile(models.Model):
             return self.avatar.url
         return '/static/img/default-avatar.png'
 
-class TelegramData(models.Model):
+class TelegramUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     telegram_id = models.BigIntegerField(unique=True)
-    username = models.CharField(max_length=32, blank=True, null=True)
-    photo_url = models.URLField(blank=True, null=True)
-    auth_date = models.DateTimeField()
+    username = models.CharField(max_length=32, null=True, blank=True)
+    first_name = models.CharField(max_length=64, null=True, blank=True)
+    last_name = models.CharField(max_length=64, null=True, blank=True)
+    photo_url = models.URLField(null=True, blank=True)
+    auth_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Telegram данные для {self.user.username}"
+        return f"{self.user.username} (ID: {self.telegram_id})"
     
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

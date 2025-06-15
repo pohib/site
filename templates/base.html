@@ -79,19 +79,14 @@
             opacity: 1;
         }
 
-        .main-content {
-            transition: margin-left 0.3s ease;
-        }
-
         @media (min-width: 992px) {
             .sidebar {
                 display: flex;
             }
-            .main-content {
-                margin-left: 60px;
-            }
+
             .sidebar:hover ~ .main-content {
                 margin-left: 250px;
+                width: calc(100% - 250px);
             }
             .navbar {
                 display: none;
@@ -102,9 +97,7 @@
             .sidebar {
                 display: none;
             }
-            .main-content {
-                margin-left: 0;
-            }
+
             .navbar {
                 display: flex;
             }
@@ -174,6 +167,10 @@
         .dark-theme .card-header {
             background-color: #2d2d2d !important;
             border-bottom-color: #333;
+        }
+
+        [data-bs-theme=dark] {
+            --bs-body-color: #ffffff;
         }
 
         [data-bs-theme="dark"] .table {
@@ -592,7 +589,7 @@
 
         @media (max-width: 767.98px) {
             .auth-buttons {
-                display: none;
+                margin-top: 1.5rem;
             }
             
             .header-content {
@@ -645,10 +642,16 @@
             --bs-text-opacity: 1;
             color: rgb(255 255 255 / 75%) !important;
         }
+
+        .container {
+            margin-left: 80px;
+            transition: margin-left 0.3s ease;
+            padding-top: 20px;
+        }
     </style>
 {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
     <header class="site-header">
         <div class="container">
             <div class="header-content">
@@ -716,8 +719,6 @@
             </button>
         </div>
     </aside>
-
-    <div class="main-content">
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container">
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
@@ -752,12 +753,12 @@
                     {% endfor %}
                 </div>
             {% endif %}
-        <main class="container my-4">
+        <main class="container my-4 flex-grow-1">
             {% block breadcrumbs %}{% endblock %}
             {% block content %}{% endblock %}
         </main>
 
-        <footer class="site-footer bg-dark text-white py-4">
+        <footer class="site-footer bg-dark text-white py-4 mt-auto">
             <div class="container">
                 <div class="row">
                     <div class="col-md-4">

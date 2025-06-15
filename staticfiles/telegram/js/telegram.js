@@ -1,5 +1,13 @@
-/* global document, window */
+
 (function () {
+  document.addEventListener('DOMContentLoaded', function() {
+  console.log('Telegram auth script initialized');
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('hash')) {
+    console.log('Found Telegram auth params in URL:', Object.fromEntries(urlParams.entries()));
+  }
+});
   'use strict'
   const f = document.createElement('form')
   f.method = 'POST'

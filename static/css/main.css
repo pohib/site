@@ -161,3 +161,48 @@ body {
     background-color: #4e73df;
     transition: width 0.3s ease;
 }
+
+/* Добавьте в ваш основной CSS файл */
+.social-login-card {
+    max-width: 500px;
+    margin: 2rem auto;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.social-provider-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.social-provider-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.social-provider-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-google {
+    background: #DB4437;
+    color: white;
+}
+
+.btn-github {
+    background: #333;
+    color: white;
+}
+
+.btn-telegram {
+    background: #5484e4;
+    color: white;
+}

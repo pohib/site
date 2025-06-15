@@ -4,12 +4,14 @@ from .forms import ProfileForm
 from users.models import Profile
 from django.contrib.auth import login
 from django.contrib.auth.models import User
-from .models import Profile, TelegramData
+from .models import Profile, TelegramUser
 import hashlib
 import hmac
-import time
+
 from django.conf import settings
-import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def profile(request):
@@ -33,67 +35,89 @@ def profile_edit(request):
 
 
 def telegram_login(request):
-    if request.user.is_authenticated:
+    if not request.GET.get('hash'):
+        logger.error("Telegram login: Missing hash in request")
+        return redirect('login')
+    
+    auth_data = request.GET.dict()
+    logger.debug(f"Telegram auth data: {auth_data}")
+
+    if not validate_telegram_data(auth_data):
+        logger.error("Telegram login: Validation failed")
+        return redirect('login')
+
+    telegram_id = auth_data['id']
+    
+    try:
+        telegram_user = TelegramUser.objects.filter(telegram_id=telegram_id).first()
+        
+        if telegram_user:
+            user = telegram_user.user
+            logger.info(f"Existing user logged in: {user.username}")
+        else:
+            username = generate_unique_username(auth_data)
+            user = User.objects.create_user(
+                username=username,
+                first_name=auth_data.get('first_name', ''),
+                last_name=auth_data.get('last_name', '')
+            )
+            logger.info(f"New user created: {username}")
+
+            TelegramUser.objects.create(
+                user=user,
+                telegram_id=telegram_id,
+                username=auth_data.get('username'),
+                first_name=auth_data.get('first_name'),
+                last_name=auth_data.get('last_name'),
+                photo_url=auth_data.get('photo_url')
+            )
+            
+        profile, created = Profile.objects.get_or_create(user=user)
+        if created:
+            logger.info(f"Profile created for Telegram user {user.username}")
+        
+        login(request, user)
         return redirect('users:profile')
         
-    if request.method == 'GET' and 'hash' in request.GET:
-        try:
-            auth_data = {
-                'id': request.GET.get('id'),
-                'first_name': request.GET.get('first_name', ''),
-                'last_name': request.GET.get('last_name', ''),
-                'username': request.GET.get('username'),
-                'photo_url': request.GET.get('photo_url'),
-                'auth_date': request.GET.get('auth_date'),
-                'hash': request.GET.get('hash')
-            }
-
-            if not validate_telegram_data(auth_data):
-                return redirect('login')
-
-            try:
-                telegram_data = TelegramData.objects.get(telegram_id=auth_data['id'])
-                user = telegram_data.user
-            except TelegramData.DoesNotExist:
-                username = auth_data.get('username') or f"tg_{auth_data['id']}"
-                if User.objects.filter(username=username).exists():
-                    username = f"{username}_{auth_data['id']}"
-                
-                user = User.objects.create_user(
-                    username=username,
-                    first_name=auth_data['first_name'],
-                    last_name=auth_data['last_name'],
-                    email=f"{username}@telegram.user",
-                    password=None
-                )
-                
-                TelegramData.objects.create(
-                    user=user,
-                    telegram_id=auth_data['id'],
-                    username=auth_data.get('username'),
-                    photo_url=auth_data.get('photo_url'),
-                    auth_date=time.strftime('%Y-%m-%d %H:%M:%S', 
-                                          time.localtime(int(auth_data['auth_date']))))
-                
-                Profile.objects.get_or_create(user=user)
-
-            login(request, user)
-            return redirect('users:profile')
-            
-        except Exception as e:
-            logger.error(f"Telegram login error: {str(e)}")
-            return redirect('login')
-        
-    return redirect('login')
-
+    except Exception as e:
+        logger.error(f"Telegram login error: {str(e)}", exc_info=True)
+        return redirect('login')
 
 def validate_telegram_data(auth_data):
     try:
+        required_fields = ['id', 'first_name', 'auth_date', 'hash']
+        for field in required_fields:
+            if field not in auth_data:
+                logger.error(f"Missing required field: {field}")
+                return False
+
         bot_token = settings.TELEGRAM_BOT_TOKEN
-        data_check_string = '\n'.join(f"{key}={auth_data[key]}" for key in sorted(auth_data) if key != 'hash')
+        data_check_string = '\n'.join(
+            f"{key}={auth_data[key]}" 
+            for key in sorted(auth_data.keys()) 
+            if key != 'hash'
+        )
+        
         secret_key = hashlib.sha256(bot_token.encode()).digest()
-        computed_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        computed_hash = hmac.new(
+            secret_key, 
+            data_check_string.encode(), 
+            hashlib.sha256
+        ).hexdigest()
         
         return auth_data['hash'] == computed_hash
-    except:
+    
+    except Exception as e:
+        logger.error(f"Validation error: {str(e)}", exc_info=True)
         return False
+
+def generate_unique_username(auth_data):
+    base_username = auth_data.get('username', f"tg_{auth_data['id']}")
+    username = base_username
+    counter = 1
+    
+    while User.objects.filter(username=username).exists():
+        username = f"{base_username}_{counter}"
+        counter += 1
+    
+    return username
