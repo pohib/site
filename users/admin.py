@@ -5,5 +5,5 @@ from .models import Profile, TelegramUser
 
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
-admin.site.register(Profile)
 admin.site.register(TelegramUser)
+admin.site.register(Profile)

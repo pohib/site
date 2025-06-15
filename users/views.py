@@ -40,8 +40,9 @@ def telegram_login(request):
         return redirect('login')
     
     auth_data = request.GET.dict()
-    logger.debug(f"Telegram auth data: {auth_data}")
+    logger.info(f"[TELEGRAM DATA] GET: {auth_data}")
 
+    
     if not validate_telegram_data(auth_data):
         logger.error("Telegram login: Validation failed")
         return redirect('login')
