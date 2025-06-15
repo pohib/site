@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from analytics import views as analytics_views
 from vacancies import views as vacancies_views
 from core.views import contact_view
+from django.urls import path
 
 urlpatterns = [
     path('admin/', admin.site.urls),

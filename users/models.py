@@ -13,6 +13,16 @@ class Profile(models.Model):
             return self.avatar.url
         return '/static/img/default-avatar.png'
 
+class TelegramData(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    telegram_id = models.BigIntegerField(unique=True)
+    username = models.CharField(max_length=32, blank=True, null=True)
+    photo_url = models.URLField(blank=True, null=True)
+    auth_date = models.DateTimeField()
+
+    def __str__(self):
+        return f"Telegram данные для {self.user.username}"
+    
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:

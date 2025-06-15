@@ -33,7 +33,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
-    'allauth.socialaccount.providers.vk',
     'allauth.socialaccount.providers.telegram',
 ]
 
@@ -44,14 +43,21 @@ AUTHENTICATION_BACKENDS = [
 
 SITE_ID = 1
 
+LOGIN_REDIRECT_URL = 'users:profile'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'  
-ACCOUNT_LOGIN_REDIRECT_URL = '/'
+ACCOUNT_LOGIN_REDIRECT_URL = 'users:profile'
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 SOCIALACCOUNT_AUTO_SIGNUP = True 
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https' if not DEBUG else 'http'
 
+TELEGRAM_BOT_NAME = 'oauthdjango_bot'
+TELEGRAM_BOT_TOKEN = '7567724087:AAFeX8JZeT23DJsayatWhLcYZNdGpQleGN0'
+TELEGRAM_LOGIN_REDIRECT_URL = '/profile/'
+TELEGRAM_LOGIN_REDIRECT_URL_FAIL = '/login/'
+TELEGRAM_LOGIN_SESSION_EXPIRATION = 86400
 
 RECAPTCHA_PUBLIC_KEY = '6LfBTF8rAAAAAMP4Gd56VKGGI4wJxXyC8R6GYJ2p'
 RECAPTCHA_PRIVATE_KEY = '6LfBTF8rAAAAANXxW53dCI4z3otqihAl_kT7iJIM'
