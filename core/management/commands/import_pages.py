@@ -10,7 +10,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         templates_dir = Path(settings.BASE_DIR) / 'templates'
         page_mappings = {
-            'home.html': 'home',
             'analytics/general_stats.html': 'general-stats',
             'analytics/demand.html': 'demand',
             'analytics/geography.html': 'geography',
@@ -38,7 +37,6 @@ class Command(BaseCommand):
     
     def get_title(self, slug):
         titles = {
-            'home': 'Главная страница',
             'general-stats': 'Общая статистика',
             'demand': 'Востребованность',
             'geography': 'География',
