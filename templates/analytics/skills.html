@@ -127,15 +127,18 @@
     }
     
     @media (max-width: 768px) {
-    .progress.skill-progress {
-        min-width: 90px;
-    }
-    .percentage-value {
-        min-width: 40px;
-        font-size: 0.9rem;
-    }
+        .progress.skill-progress {
+            min-width: 90px;
+        }
+        .percentage-value {
+            min-width: 40px;
+            font-size: 0.9rem;
+        }
     }
 
+    .dark-theme .progress.skill-progress {
+        background-color: #2b2b2b;
+    }
     .chart-container {
         height: {% if chart_settings %}{{ chart_settings.mobile_height }}px{% else %}300px{% endif %};
         width: {% if chart_settings %}

@@ -36,12 +36,14 @@ INSTALLED_APPS = [
 ]
 
 AUTHENTICATION_BACKENDS = [
+    'users.backends.TelegramBackend',
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 SITE_ID = 1
 
+LOGIN_URL = 'account_login'
 LOGIN_REDIRECT_URL = 'users:profile'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'  
@@ -264,3 +266,4 @@ ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
 ACCOUNT_EMAIL_CONFIRMATION_TEMPLATE = "users/account/email/email_confirmation_message.html"
 ACCOUNT_EMAIL_CONFIRMATION_SUBJECT = "users/account/email/email_confirmation_subject.txt"
 
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"

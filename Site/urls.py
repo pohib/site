@@ -5,11 +5,11 @@ from django.conf.urls.static import static
 from analytics import views as analytics_views
 from vacancies import views as vacancies_views
 from core.views import contact_view
-from django.urls import path
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-   
+
     path('general-stats/', analytics_views.general_stats, name='general_stats'),
     path('demand/', analytics_views.demand, name='demand'),
     path('geography/', analytics_views.geography, name='geography'),

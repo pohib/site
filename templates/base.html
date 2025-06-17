@@ -98,6 +98,10 @@
                 display: none;
             }
 
+            .container {
+                margin-left: auto !important;
+            }
+
             .navbar {
                 display: flex;
             }
@@ -184,7 +188,6 @@
             --bs-table-hover-color: #ffffff;
         }
         
-
 
         .dark-theme .table th,
         .dark-theme .table td {
@@ -496,7 +499,7 @@
         }
 
         .logo-text p {
-            color: #e9ecef;
+            color:rgb(255, 255, 255);
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05),
                         0 0 8px rgba(255, 255, 255, 0.6);
             font-weight: bold;
@@ -647,6 +650,11 @@
             margin-left: 80px;
             transition: margin-left 0.3s ease;
             padding-top: 20px;
+        }
+
+        .form-control::placeholder {
+            color:rgba(134, 133, 136, 0.74) !important;
+            opacity: 1 !important;
         }
     </style>
 {% block extra_css %}{% endblock %}

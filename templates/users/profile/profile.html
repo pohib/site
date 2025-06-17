@@ -1,6 +1,14 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_css %}
+<style>
+.container {
+    margin-left: 50px;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 {% if not user.profile %}
     <div class="alert alert-warning">Профиль не создан. Пожалуйста, сохраните изменения для создания профиля.</div>

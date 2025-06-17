@@ -20,7 +20,7 @@ class TelegramUser(models.Model):
     first_name = models.CharField(max_length=64, null=True, blank=True)
     last_name = models.CharField(max_length=64, null=True, blank=True)
     photo_url = models.URLField(null=True, blank=True)
-    auth_date = models.DateTimeField(auto_now_add=True)
+    auth_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username} (ID: {self.telegram_id})"
