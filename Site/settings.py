@@ -159,7 +159,7 @@ CSP_FRAME_SRC = ("'self'", "https://telegram.org")
 CSP_FRAME_ANCESTORS = ("'self'", "https://*.telegram.org")
 
 
-ROOT_URLCONF = 'Site.urls'
+ROOT_URLCONF = 'site.urls'
 
 TEMPLATES = [
     {
@@ -179,7 +179,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'Site.wsgi.application'
+WSGI_APPLICATION = 'site.wsgi.application'
 
 
 DATABASES = {

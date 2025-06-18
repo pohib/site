@@ -17,7 +17,7 @@ from collections import defaultdict
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Site.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'site.settings')
 django.setup()
 
 MAX_SALARY = 10000000
