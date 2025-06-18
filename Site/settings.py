@@ -181,7 +181,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'site.wsgi.application'
 
-
+ALLOWED_HOSTS = 'site-j9f4.onrender.com'
 DATABASES = {
     'default': dj_database_url.config(
         default='postgresql://postgres:postgres@localhost:5432/site_db',
