@@ -2,16 +2,18 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from .models import Profile, TelegramUser
+from allauth.account.models import EmailAddress
+from allauth.account.admin import EmailAddressAdmin as BaseEmailAddressAdmin
 
 class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
-    verbose_name_plural = 'Profiles'
+    verbose_name_plural = 'Профили'
 
 class TelegramUserInline(admin.StackedInline):
     model = TelegramUser
     can_delete = False
-    verbose_name_plural = 'Telegram Users'
+    verbose_name_plural = 'Telegram Профили'
     readonly_fields = ('telegram_id', 'auth_date')
 
 class CustomUserAdmin(UserAdmin):
@@ -38,3 +40,6 @@ class TelegramUserAdmin(admin.ModelAdmin):
     list_display = ('user', 'telegram_id', 'username', 'first_name', 'last_name')
     search_fields = ('user__username', 'telegram_id', 'username')
     readonly_fields = ('auth_date',)
+    
+
+

@@ -60,6 +60,8 @@ def latest_vacancies(request):
         logger.info(f"Всего вакансий получено из API: {len(vacancies_data)}")
         
         vacancies = []
+        seen_companies = set()
+        
         for vacancy_data in vacancies_data:
             try:
                 if not vacancy_data.get('id'):
@@ -69,6 +71,15 @@ def latest_vacancies(request):
                 if not vacancy_data.get('salary'):
                     continue
                     
+                employer = vacancy_data.get('employer', {})
+                company_name = employer.get('name', '')
+                
+                if company_name in seen_companies:
+                    logger.info(f"Skipping duplicate vacancy from company: {company_name}")
+                    continue
+                
+                seen_companies.add(company_name)
+                
                 detail_response = requests.get(
                     f"https://api.hh.ru/vacancies/{vacancy_data['id']}",
                     timeout=10
@@ -98,7 +109,6 @@ def latest_vacancies(request):
 
                 skills = ", ".join([skill.get('name', '') for skill in vacancy_detail.get('key_skills', [])])
                 
-                employer = vacancy_data.get('employer', {})
                 logo_url = employer.get('logo_urls', {}).get('90') if employer else None
                 
                 area = vacancy_data.get('area', {})
@@ -121,7 +131,7 @@ def latest_vacancies(request):
                     title=vacancy_data.get('name', 'Без названия'),
                     description=vacancy_detail.get('description', ''),
                     skills=skills,
-                    company=employer.get('name', ''),
+                    company=company_name,
                     salary=salary_str,
                     salary_value=salary_value,
                     region=region,
@@ -130,7 +140,6 @@ def latest_vacancies(request):
                     company_logo=logo_url
                 )
                 vacancies.append(vacancy)
-
 
             except (requests.RequestException, KeyError, AttributeError) as e:
                 logger.error(f"Error processing vacancy {vacancy_data.get('id')}: {str(e)}", exc_info=True)
@@ -171,6 +180,7 @@ def latest_vacancies(request):
             'all_cities': sorted(all_cities),
             'error': "Не удалось загрузить свежие вакансии. Показаны последние сохраненные данные."
         })
+        
         
 def get_cbr_currency_rate(currency_code, date):
     if settings.DEBUG:
